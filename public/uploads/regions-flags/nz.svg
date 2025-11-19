@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" id="flag-icons-nz" viewBox="0 0 640 480">
+    <g fill-rule="evenodd">
+        <path fill="#00247d" d="M0 0h640v480H0z"/>
+        <path fill="#fff" d="m270 120-40 120H110l98 70-36 120 98-70 98 70-36-120 98-70H310l-40-120z"/>
+        <path fill="#cc142b" d="m280 150-30 90H160l72 50-28 90 72-50 72 50-28-90 72-50h-90l-30-90z"/>
+        <path fill="#fff" d="M0 0h240v120H0z"/>
+        <path fill="#00247d" d="M0 0h120v120H0z"/>
+        <path fill="#fff" d="m60 30 10 20H40l20-20z"/>
+        <path fill="#fff" d="M0 120h640v60H0z"/>
+        <path fill="#cc142b" d="M0 135h640v30H0z"/>
+        <path fill="#fff" d="M0 180h640v60H0z"/>
+        <path fill="#cc142b" d="M0 195h640v30H0z"/>
+        <path fill="#fff" d="m520 30 10 20h-30l20-20z"/>
+    </g>
+</svg>

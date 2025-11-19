@@ -1,0 +1,21 @@
+User-agent: *
+Disallow: /feed/
+
+Sitemap: https://pocketthrift.com/sitemap.xml
+Sitemap: https://pocketthrift.com/au/sitemap.xml
+Sitemap: https://pocketthrift.com/uk/sitemap.xml
+Sitemap: https://pocketthrift.com/ca/sitemap.xml
+Sitemap: https://pocketthrift.com/nz/sitemap.xml
+Sitemap: https://pocketthrift.com/sg/sitemap.xml
+Sitemap: https://pocketthrift.com/es/sitemap.xml
+Sitemap: https://pocketthrift.com/mx/sitemap.xml
+Sitemap: https://pocketthrift.com/at/sitemap.xml
+Sitemap: https://pocketthrift.com/de/sitemap.xml
+Sitemap: https://pocketthrift.com/ch/sitemap.xml
+Sitemap: https://pocketthrift.com/it/sitemap.xml
+Sitemap: https://pocketthrift.com/pl/sitemap.xml
+Sitemap: https://pocketthrift.com/nl/sitemap.xml
+Sitemap: https://pocketthrift.com/fr/sitemap.xml
+Sitemap: https://pocketthrift.com/fi/sitemap.xml
+Sitemap: https://pocketthrift.com/no/sitemap.xml
+Sitemap: https://pocketthrift.com/lu/sitemap.xml

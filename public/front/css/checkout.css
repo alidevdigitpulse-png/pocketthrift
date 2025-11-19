@@ -1,0 +1,46 @@
+.checkout{
+    padding: 100px 0px;
+}
+
+
+.checkout label {
+    margin-bottom: 5px;
+}
+
+.checkout p a {
+    text-decoration: none;
+    padding-left: 2px;
+}
+
+.info-section {
+    padding: 12px 0px;
+}
+
+.info-section-1 label {
+    padding: 10px 0px;
+    display: flex;
+    gap: 8px !important;
+}
+
+
+.prod-info{
+    padding: 20px 0px;
+    display: flex;
+    gap: 35vh;
+    justify-content: left;
+}
+
+
+ul.total-row {
+    padding: 50px 0px;
+}
+
+
+
+ul.total-row li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0px;
+    border-bottom: 1px solid #eee;
+}

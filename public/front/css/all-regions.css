@@ -1,0 +1,220 @@
+.all-regions-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.all-regions-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 20px 0;
+}
+
+.all-regions-header h1 {
+    font-size: 32px;
+    margin-bottom: 15px;
+    color: #333;
+    font-weight: 600;
+}
+
+.all-regions-header p {
+    font-size: 15px;
+    color: #666;
+    max-width: 700px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+.regions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 15px;
+    margin-bottom: 50px;
+}
+
+.region-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px 10px;
+    border: 1px solid #e1e1e1;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #333;
+    transition: all 0.2s ease;
+    text-align: center;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.region-item:hover {
+    box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+    border-color: #007bff;
+}
+
+/* Flag icon styling - smaller size to match reference image */
+.region-item .flag-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 24px;
+    margin-bottom: 12px;
+    border-radius: 3px;
+    overflow: hidden;
+    background-color: #f8f9fa;
+    border: 1px solid #eee;
+}
+
+.region-item .flag-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 2px;
+}
+
+.region-item .flag-icon .flag-placeholder {
+    font-size: 10px;
+    font-weight: bold;
+    color: #666;
+}
+
+.region-item .region-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #444;
+    margin-top: 5px;
+    line-height: 1.3;
+}
+
+.deals-section {
+    text-align: center;
+    margin-bottom: 50px;
+    padding: 30px 0;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+    background: #fafafa;
+}
+
+.deals-section h2 {
+    font-size: 28px;
+    margin-bottom: 15px;
+    color: #333;
+    font-weight: 600;
+}
+
+.deals-section p {
+    font-size: 15px;
+    color: #666;
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+.deals-columns {
+    display: flex;
+    justify-content: space-around;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.deal-column {
+    flex: 1;
+    min-width: 300px;
+    text-align: center;
+    border: 1px solid #e1e1e1;
+    padding: 30px 20px;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.deal-column img {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.deal-column h3 {
+    font-size: 18px;
+    margin-bottom: 15px;
+    color: #333;
+    font-weight: 600;
+}
+
+.deal-column p {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.6;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .regions-grid {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 12px;
+    }
+    
+    .region-item {
+        padding: 12px 8px;
+    }
+    
+    .region-item .flag-icon {
+        width: 28px;
+        height: 20px;
+        margin-bottom: 10px;
+    }
+    
+    .region-item .region-name {
+        font-size: 12px;
+    }
+    
+    .all-regions-header h1 {
+        font-size: 26px;
+    }
+    
+    .all-regions-header p {
+        font-size: 14px;
+    }
+    
+    .deals-columns {
+        flex-direction: column;
+    }
+    
+    .deal-column {
+        min-width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .regions-grid {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 10px;
+    }
+    
+    .region-item {
+        padding: 10px 6px;
+    }
+    
+    .region-item .flag-icon {
+        width: 24px;
+        height: 18px;
+        margin-bottom: 8px;
+    }
+    
+    .region-item .region-name {
+        font-size: 11px;
+    }
+    
+    .all-regions-container {
+        padding: 15px;
+    }
+    
+    .deals-section h2 {
+        font-size: 24px;
+    }
+}
