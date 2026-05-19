@@ -3,21 +3,18 @@
 namespace App\Http\Controllers\Admin;
 
 use Illuminate\Support\Facades\Schema;
-
-use App\Http\Requests;
 use App\Http\Controllers\Controller;
-
-use File;
-
-use App\Models\{
-    Page,
-    Section,
-    Region
-};
+use App\Models\{Page, Region, User};
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class PageController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
 
     public function removeColumns($columns, $columsToBeRemove)
     {
@@ -40,33 +37,50 @@ class PageController extends Controller
         $regionFilter = $request->region;
         $data = new Page();
 
-        $query = Page::with('region');
+        $query = Page::with([]);
 
         // Check if the current user is a region-specific user
         $user = auth()->user();
         $isAdmin = $user->role == 1 || $user->hasRole('admin') || $user->hasRole('super admin');
 
         if (!$isAdmin && $user->assigned_regions) {
-            // For region-specific users, only show pages from their region
-            $userRegion = \App\Models\Region::where('code', $user->assigned_regions)->first();
-            if ($userRegion) {
-                $query->where('region_id', $userRegion->id);
-            }
+            // For region-specific users, only show pages that belong to their assigned region
+            $userRegionCode = $user->assigned_regions; // Get the user's assigned region code (e.g., 'us', 'uk')
+
+            // Filter pages that have this region code in their country_codes or have null/empty country_codes (available globally)
+            $query->where(function($q) use ($userRegionCode) {
+                $q->whereNull('country_codes')
+                  ->orWhere('country_codes', '[]')
+                  ->orWhere('country_codes', '')
+                  ->orWhereRaw("JSON_VALID(country_codes) AND JSON_CONTAINS(country_codes, ?)", [json_encode($userRegionCode)])
+                  ->orWhereRaw("FIND_IN_SET(?, REPLACE(country_codes, ' ', '')) > 0", [$userRegionCode]);
+            });
         }
 
         if ($regionFilter) {
-            $query->where('region_id', $regionFilter);
+            $regionCode = \App\Models\Region::find($regionFilter);
+            if($regionCode) {
+                $regionCode = $regionCode->code;
+                // Filter by pages that have this region code in their country_codes field
+                $query->where(function($q) use ($regionCode) {
+                    $q->whereNull('country_codes')
+                      ->orWhere('country_codes', '[]')
+                      ->orWhere('country_codes', '')
+                      ->orWhereRaw("JSON_VALID(country_codes) AND JSON_CONTAINS(country_codes, ?)", [json_encode($regionCode)])
+                      ->orWhereRaw("FIND_IN_SET(?, REPLACE(country_codes, ' ', '')) > 0", [$regionCode]);
+                });
+            }
         }
 
         if ($search != null) {
             $table = $data->getTable();
 
-            $columns = $this->removeColumns(Schema::getColumnListing($table), ['created_at', 'updated_at', 'image', 'id']);
+            $columns = $this->removeColumns(Schema::getColumnListing($table), ['created_at', 'updated_at', 'deleted_at', 'id']);
 
             foreach ($columns as $column) {
                 $query->orWhere($column, 'LIKE', '%' . $search . '%');
             }
-            $data = $query->orderBy('name')->paginate(12);
+            $data = $query->orderBy('title')->paginate(12);
 
             if ($request->onChange == true) {
                 // Add route information to the data for JS
@@ -88,7 +102,7 @@ class PageController extends Controller
                 return response()->json(['status' => true, 'data' => $data, 'lastPage' => $data->lastPage()]);
             }
         } else {
-            $data = $query->orderBy('name')->paginate(12);
+            $data = $query->orderBy('title')->paginate(12);
             if ($request->onChange == true) {
                 // Add route information to the data for JS
                 $user = auth()->user();
@@ -152,6 +166,7 @@ class PageController extends Controller
     {
         $user = auth()->user();
         $isAdmin = $user->role == 1 || $user->hasRole('admin') || $user->hasRole('super admin');
+        
         // Handle page creation based on user type (admin or region user)
         if (!$isAdmin) {
             // Check if user is a region user (has assigned regions)
@@ -159,50 +174,52 @@ class PageController extends Controller
                 return response()->json(['status' => false, 'message' => 'You do not have a valid region assigned.']);
             }
 
-            \Log::info('Region user attempting to create page', ['user_id' => $user->id, 'assigned_regions' => $user->assigned_regions]);
-
-            // Get user's region
-            $userRegion = \App\Models\Region::where('code', $user->assigned_regions)->first();
-            if (!$userRegion) {
-                \Log::error('Region user has invalid region code', ['user_id' => $user->id, 'region_code' => $user->assigned_regions]);
-                return response()->json(['status' => false, 'message' => 'You do not have a valid region assigned.']);
-            }
-
-            \Log::info('Found user region', ['region_id' => $userRegion->id, 'region_code' => $userRegion->code]);
-
-            // Override region_id to user's region
-            $request->merge(['region_id' => $userRegion->id]);
+            $userRegionCode = $user->assigned_regions;
+            \Log::info('Region user attempting to create page', ['user_id' => $user->id, 'assigned_regions' => $userRegionCode]);
 
             // Automatically append region code to page name
-            $pageName = $request->input('name');
-            $newPageName = $pageName . '-' . $userRegion->code;
-            $request->merge(['name' => $newPageName]);
+            $pageName = $request->input('title');
+            $newPageName = $pageName . '-' . $userRegionCode;
+            $request->merge(['title' => $newPageName]);
+
+            // Ensure that country_codes includes the user's region if not already specified
+            $countryCodes = $request->input('country_codes', []);
+            if (empty($countryCodes)) {
+                // If no country codes specified, set it to just user's region
+                $request->merge(['country_codes' => [$userRegionCode]]);
+            } else {
+                // If country codes are specified, ensure user's region is in the list
+                // Since this is coming from form input, it might be an array or string depending on how it was sent,
+                // but typically checkboxes send an array.
+                $inputCodes = is_array($countryCodes) ? $countryCodes : explode(',', $countryCodes);
+                
+                if (!in_array($userRegionCode, $inputCodes)) {
+                    return response()->json(['status' => false, 'message' => 'You can only create pages for your assigned region.']);
+                }
+            }
 
             \Log::info('Modified page name for region user', ['original_name' => $pageName, 'new_name' => $newPageName]);
 
             $this->validate($request, [
-                'name' => 'required',
-                'region_id' => 'required|exists:regions,id'
+                'title' => 'required'
             ]);
         } else {
-            // Admins can create pages but must specify a region
             $this->validate($request, [
-                'name' => 'required',
-                'region_id' => 'required|exists:regions,id'
+                'title' => 'required'
             ]);
         }
 
         $request->request->remove('_token');
         $data = $request->input();
-        if ($request->hasFile('page_image')) {
-            $fileName = time().'.'.$request->page_image->extension();
-            $request->page_image->move(public_path('uploads/page'), $fileName);
-            $data['image'] = 'uploads/page/'.$fileName;
-        }
 
         // Ensure required fields are present
-        if (empty($data['name'])) {
-            return response()->json(['status' => false, 'message' => 'Name is required']);
+        if (empty($data['title'])) {
+            return response()->json(['status' => false, 'message' => 'Title is required']);
+        }
+
+        // Process country codes if provided
+        if (isset($data['country_codes']) && is_array($data['country_codes'])) {
+            $data['country_codes'] = implode(',', $data['country_codes']);
         }
 
         // Log the data being inserted for debugging
@@ -210,24 +227,32 @@ class PageController extends Controller
 
         try {
             $page = new Page();
-            $page->name = $data['name'];
-            $page->region_id = $data['region_id'] ?? null;
-            $page->image = $data['image'] ?? null;
-            $page->status = $data['status'] ?? 0; // Default to active
+            $page->title = $data['title'];
+            $page->seo_title = $data['seo_title'] ?? null;
+            $page->seo_meta_keyword = $data['seo_meta_keyword'] ?? null;
+            $page->url_slug = $data['url_slug'] ?? Str::slug($data['title']);
+            $page->meta_description = $data['meta_description'] ?? null;
+            $page->meta_robots = $data['meta_robots'] ?? null;
+            $page->content_body = $data['content_body'] ?? null;
+            $page->country_codes = $data['country_codes'] ?? null;
+            $page->start_date = $data['start_date'] ?? null;
+            $page->end_date = $data['end_date'] ?? null;
+            $page->active = $data['active'] ?? 1;
+            $page->sort = $data['sort'] ?? 0;
+            $page->sort = $data['sort'] ?? 0;
+            $page->created_by = auth()->id();
 
             \Log::info('Attempting to save page with data: ', [
-                'name' => $page->name,
-                'region_id' => $page->region_id,
-                'image' => $page->image,
-                'status' => $page->status
+                'title' => $page->title,
+                'country_codes' => $page->country_codes,
+                'active' => $page->active
             ]);
 
-            // Save the page - slug will be generated automatically by Sluggable trait
             $result = $page->save();
 
             if ($result) {
                 \Log::info('Page creation successful, ID: ' . $page->id);
-                return response()->json(['status' => true, 'message' => 'Data Successfully Updated', 'page_id' => $page->id]);
+                return response()->json(['status' => true, 'message' => 'Page Successfully Created', 'page_id' => $page->id]);
             } else {
                 \Log::error('Page creation returned false');
                 return response()->json(['status' => false, 'message' => 'Page creation failed - save returned false']);
@@ -237,8 +262,6 @@ class PageController extends Controller
             \Log::error('Data that failed: ', $data);
             return response()->json(['status' => false, 'message' => 'Page creation failed: ' . $e->getMessage()]);
         }
-
-        return response()->json(['status'=>true,'message' => 'Data Successfully Updated']);
     }
 
     /**
@@ -250,35 +273,38 @@ class PageController extends Controller
      */
     public function show($id)
     {
-    }
+        $page = Page::findOrFail($id);
 
-    public function sectionCreate(Request $request)
-    {
-        // Validate that the page belongs to the user's region if they are a region user
+        // Check if the current user is allowed to view this page (based on region)
         $user = auth()->user();
         $isAdmin = $user->role == 1 || $user->hasRole('admin') || $user->hasRole('super admin');
 
-        if (!$isAdmin && $request->has('page_id')) {
-            $page = Page::find($request->page_id);
-            if ($page) {
-                // Check if user has assigned regions
-                if (empty($user->assigned_regions)) {
-                    abort(403, 'You do not have a valid region assigned.');
-                }
+        if (!$isAdmin) {
+            // Only allow region users to view pages that are available in their region
+            if (empty($user->assigned_regions)) {
+                abort(403, 'You do not have a valid region assigned.');
+            }
 
-                $userRegion = \App\Models\Region::where('code', $user->assigned_regions)->first();
-                if (!$userRegion || $page->region_id != $userRegion->id) {
-                    abort(403, 'You do not have permission to add sections to this page.');
-                }
+            $userRegionCode = $user->assigned_regions;
 
-                // For region users, append region code to the section name
-                $sectionName = $request->input('name');
-                $request->merge(['name' => $sectionName . '-' . $userRegion->code]);
+            // Check if this page is available in the user's region
+            $isPageAvailableInUserRegion = true;
+            $pageCountryCodes = $page->country_codes;
+
+            if (!empty($pageCountryCodes) && is_array($pageCountryCodes) && count($pageCountryCodes) > 0) {
+                // If page has specific country codes, check if user's region code is in the list
+                $isPageAvailableInUserRegion = in_array($userRegionCode, $pageCountryCodes);
+            } elseif (!empty($pageCountryCodes) && is_string($pageCountryCodes)) {
+                 $isPageAvailableInUserRegion = strpos($pageCountryCodes, $userRegionCode) !== false;
+            }
+            // If page has no specific country codes (empty), it's available to all regions
+
+            if (!$isPageAvailableInUserRegion) {
+                abort(403, 'You do not have permission to view this page.');
             }
         }
 
-        $section = Section::create($request->all());
-        return response()->json(['status' => true, 'slug' => $section->slug]);
+        return view('admin.page.show', compact('page'));
     }
 
     /**
@@ -290,29 +316,38 @@ class PageController extends Controller
      */
     public function edit($id)
     {
-        $data = Page::with('region')->findOrFail($id);
+        $data = Page::findOrFail($id);
 
         // Check if the current user is allowed to edit this page (based on region)
         $user = auth()->user();
         $isAdmin = $user->role == 1 || $user->hasRole('admin') || $user->hasRole('super admin');
 
         if (!$isAdmin) {
-            // Only allow region users to edit pages that belong to their region
+            // Only allow region users to edit pages that are available in their region
             if (empty($user->assigned_regions)) {
                 abort(403, 'You do not have a valid region assigned.');
             }
 
-            if ($data->region_id) {
-                $userRegion = \App\Models\Region::where('code', $user->assigned_regions)->first();
-                if (!$userRegion || $data->region_id != $userRegion->id) {
-                    abort(403, 'You do not have permission to edit this page.');
-                }
-            } else {
+            $userRegionCode = $user->assigned_regions;
+
+            // Check if this page is available in the user's region
+            $isPageAvailableInUserRegion = true;
+            $pageCountryCodes = $data->country_codes;
+
+            if (!empty($pageCountryCodes) && is_array($pageCountryCodes) && count($pageCountryCodes) > 0) {
+                // If page has specific country codes, check if user's region code is in the list
+                $isPageAvailableInUserRegion = in_array($userRegionCode, $pageCountryCodes);
+            } elseif (!empty($pageCountryCodes) && is_string($pageCountryCodes)) {
+                 $isPageAvailableInUserRegion = strpos($pageCountryCodes, $userRegionCode) !== false;
+            }
+            // If page has no specific country codes (empty), it's available to all regions
+
+            if (!$isPageAvailableInUserRegion) {
                 abort(403, 'You do not have permission to edit this page.');
             }
         }
 
-        // For region-specific users, only show their region
+        // For region-specific users, only show their region in the dropdown
         if (!$isAdmin && $user->assigned_regions) {
             $regions = \App\Models\Region::where('code', $user->assigned_regions)->get();
         } else {
@@ -330,12 +365,9 @@ class PageController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
      */
-    public function update(Request $request, $page)
+    public function update(Request $request, $id)
     {
-        // Ensure we have a Page model instance even if route-model binding param name differs
-        if (!$page instanceof Page) {
-            $page = Page::findOrFail($page);
-        }
+        $page = Page::findOrFail($id);
 
         $user = auth()->user();
         $isAdmin = $user->role == 1 || $user->hasRole('admin') || $user->hasRole('super admin');
@@ -347,87 +379,80 @@ class PageController extends Controller
                 abort(403, 'You do not have a valid region assigned.');
             }
 
-            $userRegion = \App\Models\Region::where('code', $user->assigned_regions)->first();
-            if (!$userRegion) {
-                abort(403, 'You do not have a valid region assigned.');
+            $userRegionCode = $user->assigned_regions;
+
+            // Check if this page is available in the user's region
+            $isPageAvailableInUserRegion = true;
+            $pageCountryCodes = $page->country_codes;
+
+            if (!empty($pageCountryCodes) && is_array($pageCountryCodes) && count($pageCountryCodes) > 0) {
+                // If page has specific country codes, check if user's region code is in the list
+                $isPageAvailableInUserRegion = in_array($userRegionCode, $pageCountryCodes);
+            } elseif (!empty($pageCountryCodes) && is_string($pageCountryCodes)) {
+                 $isPageAvailableInUserRegion = strpos($pageCountryCodes, $userRegionCode) !== false;
+            }
+            // If page has no specific country codes (empty), it's available to all regions
+
+            if (!$isPageAvailableInUserRegion) {
+                abort(403, 'You do not have permission to update this page.');
             }
 
-            if ($page->region_id) {
-                // Compare using the region ID from the page with the user region ID
-                if ($page->region_id != $userRegion->id) {
-                    abort(403, 'You do not have permission to update this page.');
+            // For region-specific users, ensure they don't change the region in country_codes if they don't have permission
+            // If they're trying to change country_codes, make sure they can manage the regions they're adding
+            $newCountryCodes = $request->input('country_codes');
+            if ($newCountryCodes) {
+                foreach ($newCountryCodes as $code) {
+                    if ($code !== $userRegionCode) {
+                        // User is trying to add a region they don't manage
+                        abort(403, 'You can only manage pages in your assigned region.');
+                    }
                 }
-            } 
-
-            // For region-specific users, ensure they don't change the region
-            $request->merge(['region_id' => $page->region_id]);
+            }
 
             // Automatically append region code to page name for non-admin users
-            $pageName = $request->input('name');
+            $pageName = $request->input('title');
             // Remove existing region code if present and re-append the correct one
             $baseName = preg_replace('/-\w+$/', '', $pageName); // Remove any trailing region code like '-ca'
-            $request->merge(['name' => $baseName . '-' . $userRegion->code]);
+            $request->merge(['title' => $baseName . '-' . $userRegionCode]);
 
             $this->validate($request, [
-                'name' => 'required',
+                'title' => 'required',
             ]);
         } else {
             $this->validate($request, [
-                'name' => 'required',
+                'title' => 'required',
             ]);
         }
-        
+
         $request->request->remove('_token');
         $request->request->remove('_method');
         $data = $request->input();
-        
-        if ($request->hasFile('page_image')) {
-            if (File::exists(public_path($page->image))) {
-                File::delete(public_path($page->image));
-            }
-            $fileName = time().'.'.$request->page_image->extension();
-            $request->page_image->move(public_path('uploads/page'), $fileName);
-            $data['image'] = 'uploads/page/'.$fileName;
+
+        // Process country codes if provided
+        if (isset($data['country_codes']) && is_array($data['country_codes'])) {
+            $data['country_codes'] = implode(',', $data['country_codes']);
         }
 
-        // Process sections - this is critical for updating section content
-        if ($request->exists('section')) {
-            foreach ($request->section as $key => $section) {
-                $sectionModel = $page->sections()->where('slug', $key)->first();
-                if ($sectionModel) {
-                    $sectionModel->update(['value' => $section]);
-                }
-            }
-        }
-        
-        // Process image uploads for sections
-        if ($request->hasFile('image')) {
-            File::isDirectory(public_path('uploads/page')) or File::makeDirectory(public_path('uploads/page'), 0777, true, true);
-            foreach ($request->file('image') as $key => $image) {
-                $sectionModel = $page->sections()->where('slug', $key)->first();
-                if ($sectionModel) {
-                    if (File::exists(public_path($sectionModel->value))) {
-                        File::delete(public_path($sectionModel->value));
-                    }
-                    $fileName = time() . '.' . $image->extension();
-                    $image->move(public_path('uploads/page'), $fileName);
-                    $sectionModel->update(['value' => 'uploads/page/' . $fileName]);
-                }
-            }
-        }
-        
         try {
-            // Apply the changes to the page - use request input for name which includes region code for region users
-            $page->name = $request->input('name');
-            $page->region_id = $data['region_id'] ?? $page->region_id;
-            $page->image = $data['image'] ?? $page->image;
-            $page->status = $data['status'] ?? $page->status;
+            $page->title = $data['title'];
+            $page->seo_title = $data['seo_title'] ?? null;
+            $page->seo_meta_keyword = $data['seo_meta_keyword'] ?? null;
+            $page->url_slug = $data['url_slug'] ?? Str::slug($data['title']);
+            $page->meta_description = $data['meta_description'] ?? null;
+            $page->meta_robots = $data['meta_robots'] ?? null;
+            $page->content_body = $data['content_body'] ?? null;
+            $page->country_codes = $data['country_codes'] ?? $page->country_codes;
+            $page->start_date = $data['start_date'] ?? null;
+            $page->end_date = $data['end_date'] ?? null;
+            $page->active = $data['active'] ?? 0;
+            $page->sort = $data['sort'] ?? 0;
+            $page->updated_by = auth()->id();
 
             $result = $page->save();
-            
+
             if ($result) {
                 \Log::info("Page updated successfully by user role: " . ($isAdmin ? 'admin' : 'region user'));
-                return response()->json(['status' => true, 'message' => 'Data Successfully Updated']);
+                return response()->json(['status' => true, 'message' => 'Page Successfully Updated']);
             } else {
                 return response()->json(['status' => false, 'message' => 'Page update failed']);
             }
@@ -436,6 +461,7 @@ class PageController extends Controller
             return response()->json(['status' => false, 'message' => 'Page update failed: ' . $e->getMessage()]);
         }
     }
+
     /**
      * Remove the specified resource from storage.
      *
@@ -443,19 +469,84 @@ class PageController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
      */
-    public function destroy(Page $page)
+    public function destroy($id)
     {
+        $page = Page::findOrFail($id);
 
-        $status = $page->status;
-        if ($status == 0) {
-            $page->status = 1;
-            $message = 'Deactive';
-        } else {
-            $page->status = 0;
-            $message = 'Active';
+        // Check if the current user is allowed to delete this page (based on region)
+        $user = auth()->user();
+        $isAdmin = $user->role == 1 || $user->hasRole('admin') || $user->hasRole('super admin');
+
+        if (!$isAdmin) {
+            // Only allow region users to delete pages that are available in their region
+            if (empty($user->assigned_regions)) {
+                abort(403, 'You do not have a valid region assigned.');
+            }
+
+            $userRegionCode = $user->assigned_regions;
+
+            // Check if this page is available in the user's region
+            $isPageAvailableInUserRegion = true;
+            $pageCountryCodes = $page->country_codes;
+
+            if (!empty($pageCountryCodes) && is_array($pageCountryCodes) && count($pageCountryCodes) > 0) {
+                // If page has specific country codes, check if user's region code is in the list
+                $isPageAvailableInUserRegion = in_array($userRegionCode, $pageCountryCodes);
+            } elseif (!empty($pageCountryCodes) && is_string($pageCountryCodes)) {
+                 $isPageAvailableInUserRegion = strpos($pageCountryCodes, $userRegionCode) !== false;
+            }
+            // If page has no specific country codes (empty), it's available to all regions
+
+            if (!$isPageAvailableInUserRegion) {
+                abort(403, 'You do not have permission to delete this page.');
+            }
         }
+
+        $page->deleted_by = auth()->id();
+        $page->save();
+        $page->delete();
+
+        return redirect()->back()->with('success', 'Page deleted successfully');
+    }
+
+    /**
+     * Toggle the active status of the specified resource
+     * 
+     * @param Page $page
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function toggleStatus(Page $page)
+    {
+        // Check if the current user is allowed to toggle the status of this page (based on region)
+        $user = auth()->user();
+        $isAdmin = $user->role == 1 || $user->hasRole('admin') || $user->hasRole('super admin');
+
+        if (!$isAdmin) {
+            // Only allow region users to toggle pages that belong to their region
+            if (empty($user->assigned_regions)) {
+                abort(403, 'You do not have a valid region assigned.');
+            }
+
+            $userRegionCode = $user->assigned_regions;
+            
+            // Check if page belongs to user region via country_codes
+            $pageCountryCodes = $page->country_codes;
+            $isPageInRegion = false;
+
+            if(is_array($pageCountryCodes)) {
+                $isPageInRegion = in_array($userRegionCode, $pageCountryCodes);
+            } elseif (is_string($pageCountryCodes)) {
+                $isPageInRegion = strpos($pageCountryCodes, $userRegionCode) !== false;
+            }
+
+            if (!$isPageInRegion) {
+                 abort(403, 'You do not have permission to toggle this page.');
+            }
+        }
+
+        $page->active = !$page->active;
         $page->save();
 
-        return redirect()->back()->with('success', 'Page ' . $message);
+        return redirect()->back()->with('success', 'Page status updated successfully');
     }
 }

@@ -110,10 +110,10 @@
                                         <td>
                                             <a href="{{ route('admin.stores.show', $store->id) }}" class="btn btn-sm btn-info">View</a>
                                             <a href="{{ route('admin.stores.edit', $store->id) }}" class="btn btn-sm btn-primary">Edit</a>
-                                            <form action="{{ route('admin.stores.destroy', $store->id) }}" method="POST" class="d-inline">
+                                            <form action="{{ route('admin.stores.destroy', $store->id) }}" method="POST" class="d-inline" id="delete-form-{{ $store->id }}">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this store?')">Delete</button>
+                                                <button type="button" class="btn btn-sm btn-danger" onclick="deleteStore({{ $store->id }})">Delete</button>
                                             </form>
                                         </td>
                                     </tr>
@@ -135,3 +135,24 @@
     </div>
 </div>
 @endsection
+
+@push('js')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  function deleteStore(id) {
+      Swal.fire({
+          title: 'Are you sure?',
+          text: "You won't be able to revert this!",
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'Yes, delete it!'
+      }).then((result) => {
+          if (result.isConfirmed) {
+              document.getElementById('delete-form-' + id).submit();
+          }
+      })
+  }
+</script>
+@endpush

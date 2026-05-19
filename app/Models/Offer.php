@@ -97,11 +97,18 @@ class Offer extends Model
         return $query->where(function($q) use ($regionCodes) {
             $q->whereNull('country_codes')
               ->orWhere('country_codes', '')
-              ->orWhere(function($subQuery) use ($regionCodes) {
-                  foreach ($regionCodes as $code) {
-                      $subQuery->orWhereRaw("FIND_IN_SET(?, country_codes)", [$code]);
-                  }
-              });
+              ->orWhere('country_codes', 'NULL'); // Handle string "NULL" as available in all regions
+              
+            // Check for exact matches or comma-separated lists
+            foreach ($regionCodes as $code) {
+                $q->orWhere('country_codes', $code) // Exact match for single region code
+                  ->orWhereRaw("FIND_IN_SET(?, REPLACE(country_codes, ' ', '')) > 0", [$code])
+                  ->orWhere('country_codes', 'LIKE', '%"' . $code . '"%')
+                  ->orWhere('country_codes', 'LIKE', $code . ',%') // Start
+                  ->orWhere('country_codes', 'LIKE', '%,' . $code) // End
+                  ->orWhere('country_codes', 'LIKE', '%,' . $code . ',%') // Middle
+                  ->orWhere('country_codes', 'LIKE', '%' . $code . '%'); // Fallback
+            }
         });
     }
 

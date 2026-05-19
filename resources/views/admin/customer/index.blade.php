@@ -79,7 +79,7 @@
                                                             <td>{{ $items->id }}</td>
                                                             <td>{{ $items->name }}</td>
                                                             <td>{{ $items->email }}</td>
-                                                            <td><a href="javascript:void(0)"
+                                                            <td><a href="{{ route('customer.edit', $items->id) }}"
                                                                     class="btn btn-sm btn-primary">Edit</a>
                                                                 <button class="btn btn-sm btn-danger"
                                                                     type="button">Delete</button>

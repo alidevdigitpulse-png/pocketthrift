@@ -110,17 +110,22 @@ class Store extends Model
 
     public function faqs()
     {
-        return $this->hasMany(Faq::class);
+        return $this->hasMany(Faq::class)->orderBy('sort');
     }
 
-    public function offers()
+    public function socialLinks()
     {
-        return $this->hasMany(Offer::class);
+        return $this->hasMany(SocialLink::class)->orderBy('sort');
     }
 
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function offers()
+    {
+        return $this->hasMany(Offer::class)->orderBy('sort');
     }
 
     public function updater()

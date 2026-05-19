@@ -56,7 +56,7 @@
                                     <th>Logo:</th>
                                     <td>
                                         @if($blog->logo)
-                                            <img src="{{ asset('storage/uploads/' . $blog->logo) }}" alt="Blog Image" width="100" height="100">
+                                            <img src="{{ asset( substr($blog->logo, 0, 8) === 'uploads/' ? $blog->logo : 'uploads/' . $blog->logo ) }}" alt="{{ $blog->title }}">
                                         @else
                                             No Image
                                         @endif
@@ -75,12 +75,8 @@
                         <div class="col-md-6">
                             <table class="table table-borderless">
                                 <tr>
-                                    <th>Start Date:</th>
-                                    <td>{{ $blog->start_date ? $blog->start_date->format('Y-m-d') : 'N/A' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>End Date:</th>
-                                    <td>{{ $blog->end_date ? $blog->end_date->format('Y-m-d') : 'N/A' }}</td>
+                                    <th>SEO Title:</th>
+                                    <td>{{ $blog->seo_title ?: 'N/A' }}</td>
                                 </tr>
                                 <tr>
                                     <th>Meta Robots:</th>
@@ -146,6 +142,41 @@
                             <h5>SEO Meta Keywords:</h5>
                             <div class="border p-3">
                                 {{ $blog->seo_meta_keyword ?: 'N/A' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FAQs Section -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">FAQs</h4>
+                                </div>
+                                <div class="card-body">
+                                    @if($blog->faqs && $blog->faqs->count() > 0)
+                                        <div class="list-group list-group-flush">
+                                            @foreach($blog->faqs as $faq)
+                                                <div class="list-group-item p-3">
+                                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                                        <h5 class="mb-1 fw-bold">{{ $faq->question }}</h5>
+                                                        <small class="text-muted text-nowrap ms-2">Sort: {{ $faq->sort }}</small>
+                                                    </div>
+                                                    <div class="p-3 bg-light rounded text-secondary border">
+                                                        {{ $faq->answer }}
+                                                    </div>
+                                                    <div class="mt-1 text-end">
+                                                        <small class="text-muted">Created: {{ $faq->created_at ? $faq->created_at->format('Y-m-d H:i') : 'N/A' }}</small>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <div class="text-center py-4 text-muted">
+                                            No FAQs available for this blog.
+                                        </div>
+                                    @endif
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -104,14 +104,6 @@
                                     <td>{{ $offer->sort }}</td>
                                 </tr>
                                 <tr>
-                                    <th>Start Date:</th>
-                                    <td>{{ $offer->start_date ? $offer->start_date->format('Y-m-d') : 'N/A' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>End Date:</th>
-                                    <td>{{ $offer->end_date ? $offer->end_date->format('Y-m-d') : 'N/A' }}</td>
-                                </tr>
-                                <tr>
                                     <th>Created At:</th>
                                     <td>{{ $offer->created_at->format('Y-m-d H:i:s') }}</td>
                                 </tr>
@@ -171,7 +163,7 @@
                         <div class="col-12">
                             <h5>Logo</h5>
                             <div class="border p-3">
-                                <img src="{{ $offer->logo }}" alt="Offer Logo" style="max-width: 200px; max-height: 200px;">
+                                <img src="{{ asset( substr($offer->logo, 0, 8) === 'uploads/' ? $offer->logo : 'uploads/' . $offer->logo ) }}" alt="{{ $offer->title }}">
                             </div>
                         </div>
                     </div>

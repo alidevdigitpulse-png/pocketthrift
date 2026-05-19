@@ -44,11 +44,34 @@ class Blog extends Model
         'created_by' => 'integer',
         'updated_by' => 'integer',
         'deleted_by' => 'integer',
-        'country_codes' => 'array', // This will cast the JSON to an array
+        'deleted_by' => 'integer',
+        // 'country_codes' => 'array', // Removed to support CSV string storage
         'start_date' => 'date',
         'end_date' => 'date',
         'deleted_at' => 'datetime',
     ];
+
+    public function getCountryCodesAttribute($value)
+    {
+        // Convert comma-separated values to array when accessed
+        if ($value) {
+            // Trim whitespace from each code and filter out empty values
+            return array_filter(array_map('trim', explode(',', $value)));
+        }
+        return [];
+    }
+
+    public function setCountryCodesAttribute($value)
+    {
+        // Convert array to comma-separated string when setting
+        if (is_array($value)) {
+            // Trim whitespace and filter out empty values before storing
+            $cleanedValues = array_filter(array_map('trim', $value));
+            $this->attributes['country_codes'] = implode(',', $cleanedValues);
+        } else {
+            $this->attributes['country_codes'] = $value;
+        }
+    }
 
     /**
      * Return the sluggable configuration array for this model.
@@ -143,5 +166,13 @@ class Blog extends Model
     public function deleter()
     {
         return $this->belongsTo(User::class, 'deleted_by');
+    }
+
+    /**
+     * Get the FAQs associated with the blog.
+     */
+    public function faqs()
+    {
+        return $this->hasMany(Faq::class);
     }
 }

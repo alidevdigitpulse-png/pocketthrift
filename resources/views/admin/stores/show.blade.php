@@ -60,7 +60,7 @@
                                 </tr>
                                 <tr>
                                     <th>Logo:</th>
-                                    <td>{{ $store->logo ?? 'N/A' }}</td>
+                                    <td><img src="{{ asset( substr($store->logo, 0, 8) === 'uploads/' ? $store->logo : 'uploads/' . $store->logo ) }}" alt="{{ $store->title }}"></td>
                                 </tr>
                                 <tr>
                                     <th>Image Alt Text:</th>
@@ -89,14 +89,6 @@
                                 <tr>
                                     <th>Sort Order:</th>
                                     <td>{{ $store->sort }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Start Date:</th>
-                                    <td>{{ $store->start_date ? $store->start_date->format('Y-m-d') : 'N/A' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>End Date:</th>
-                                    <td>{{ $store->end_date ? $store->end_date->format('Y-m-d') : 'N/A' }}</td>
                                 </tr>
                                 <tr>
                                     <th>Created At:</th>
@@ -178,27 +170,37 @@
     <div class="row mt-4">
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title">FAQs</h4>
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title mb-0 text-white">
+                        <i class="fas fa-question-circle me-2"></i>Frequently Asked Questions
+                    </h4>
                 </div>
                 <div class="card-body">
                     @if($store->faqs->count() > 0)
-                        <div class="accordion" id="faqsAccordion">
-                            @foreach($store->faqs as $faq)
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header" id="faqHeading{{ $faq->id }}">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq{{ $faq->id }}" aria-expanded="false" aria-controls="faq{{ $faq->id }}">
-                                            {{ $faq->question }}
-                                        </button>
-                                    </h2>
-                                    <div id="faq{{ $faq->id }}" class="accordion-collapse collapse" aria-labelledby="faqHeading{{ $faq->id }}" data-bs-parent="#faqsAccordion">
-                                        <div class="accordion-body">
-                                            <p><strong>Answer:</strong></p>
-                                            <div class="border p-3 bg-light">
-                                                {{ $faq->answer }}
+                        <div class="row">
+                            @foreach($store->faqs as $index => $faq)
+                                <div class="col-12 mb-3">
+                                    <div class="card border-start border-primary border-4 shadow-sm">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0 d-flex align-items-center">
+                                                <span class="badge bg-primary me-2">Q{{ $index + 1 }}</span>
+                                                <strong>{{ $faq->question }}</strong>
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="mb-3">
+                                                <p class="mb-0"><strong class="text-success">Answer:</strong></p>
+                                                <div class="mt-2 p-3 bg-light rounded">
+                                                    {{ $faq->answer }}
+                                                </div>
                                             </div>
-                                            <div class="mt-2">
-                                                <small class="text-muted">Sort: {{ $faq->sort }} | Created: {{ $faq->created_at->format('Y-m-d H:i') }}</small>
+                                            <div class="d-flex justify-content-between align-items-center border-top pt-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-sort me-1"></i>Sort Order: <span class="badge bg-secondary">{{ $faq->sort }}</span>
+                                                </small>
+                                                <small class="text-muted">
+                                                    <i class="far fa-clock me-1"></i>Created: {{ $faq->created_at->format('M d, Y H:i') }}
+                                                </small>
                                             </div>
                                         </div>
                                     </div>
@@ -206,7 +208,51 @@
                             @endforeach
                         </div>
                     @else
-                        <p>No FAQs available for this store.</p>
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle me-2"></i>No FAQs available for this store.
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Social Links Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title">Social Links</h4>
+                </div>
+                <div class="card-body">
+                    @if($store->socialLinks->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Social App</th>
+                                        <th>Link</th>
+                                        <th>Sort Order</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($store->socialLinks as $link)
+                                        <tr>
+                                            <td>
+                                                @if($link->socialApp && $link->socialApp->logo)
+                                                    <img src="{{ asset('uploads/' . $link->socialApp->logo) }}" alt="{{ $link->socialApp->title }}" width="30" class="me-2">
+                                                @endif
+                                                {{ $link->socialApp->title ?? 'N/A' }}
+                                            </td>
+                                            <td><a href="{{ $link->link }}" target="_blank">{{ $link->link }}</a></td>
+                                            <td>{{ $link->sort }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <p>No Social Links available for this store.</p>
                     @endif
                 </div>
             </div>

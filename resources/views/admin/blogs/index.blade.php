@@ -21,7 +21,12 @@
                             <form method="GET" action="{{ route('admin.blog.index') }}">
                                 <div class="row">
                                     <div class="col-md-2">
-                                        <input type="text" name="search" class="form-control" placeholder="Search blogs..." value="{{ request('search') }}">
+                                        <select name="search" class="form-control blog-search-select2">
+                                            <option></option>
+                                            @if(request('search'))
+                                                <option value="{{ request('search') }}" selected>{{ request('search') }}</option>
+                                            @endif
+                                        </select>
                                     </div>
                                     <div class="col-md-2">
                                         <select name="active" class="form-control">
@@ -81,7 +86,7 @@
                                         <td>{{ $blog->id }}</td>
                                         <td>
                                             @if($blog->logo)
-                                                <img src="{{ asset('storage/uploads/' . $blog->logo) }}" alt="Blog Image" width="50" height="50">
+                                                <img src="{{ asset('uploads/' . $blog->logo) }}" alt="Blog Image" width="50" height="50">
                                             @else
                                                 <span class="text-muted">No Image</span>
                                             @endif
@@ -89,8 +94,23 @@
                                         <td>{{ Str::limit($blog->title, 20) }}</td>
                                         <td>{{ $blog->category ? $blog->category->title : 'N/A' }}</td>
                                         <td>
-                                            @if($blog->country_codes && count($blog->country_codes))
-                                                {{ Str::limit(implode(', ', $blog->country_codes), 20) }}
+                                            @php
+                                                $codes = $blog->country_codes;
+                                                if (empty($codes)) {
+                                                    $raw = $blog->getRawOriginal('country_codes');
+                                                    if (!empty($raw)) {
+                                                        // Handle legacy CSV or bad JSON
+                                                        $clean = str_replace(['[', ']', '"', "'"], '', $raw);
+                                                        $codes = array_filter(array_map('trim', explode(',', $clean)));
+                                                    }
+                                                }
+                                            @endphp
+
+                                            @if(!empty($codes))
+                                                @php
+                                                    $regionNames = \App\Models\Region::whereIn('code', $codes)->pluck('country')->toArray();
+                                                @endphp
+                                                {{ Str::limit(implode(', ', $regionNames), 30) }}
                                             @else
                                                 <span class="text-muted">All Regions</span>
                                             @endif
@@ -106,10 +126,10 @@
                                         <td>
                                             <a href="{{ route('admin.blog.show', $blog->id) }}" class="btn btn-sm btn-info">View</a>
                                             <a href="{{ route('admin.blog.edit', $blog->id) }}" class="btn btn-sm btn-primary">Edit</a>
-                                            <form action="{{ route('admin.blog.destroy', $blog->id) }}" method="POST" class="d-inline">
+                                            <form action="{{ route('admin.blog.destroy', $blog->id) }}" method="POST" class="d-inline" id="delete-form-{{ $blog->id }}">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this blog?')">Delete</button>
+                                                <button type="button" class="btn btn-sm btn-danger" onclick="deleteBlog({{ $blog->id }})">Delete</button>
                                             </form>
                                         </td>
                                     </tr>
@@ -131,3 +151,50 @@
     </div>
 </div>
 @endsection
+
+@push('js')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  function deleteBlog(id) {
+      Swal.fire({
+          title: 'Are you sure?',
+          text: "You won't be able to revert this!",
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'Yes, delete it!'
+      }).then((result) => {
+          if (result.isConfirmed) {
+              document.getElementById('delete-form-' + id).submit();
+          }
+      })
+  }
+
+    $(document).ready(function() {
+        $('.blog-search-select2').select2({
+            placeholder: 'Search blogs...',
+            allowClear: true,
+            width: '100%',
+            ajax: {
+                url: '{{ route("admin.blog.search") }}',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return {
+                        term: params.term
+                    };
+                },
+                processResults: function (data) {
+                    return {
+                        results: data.results
+                    };
+                },
+                cache: true
+            },
+            minimumInputLength: 1,
+            tags: true
+        });
+    });
+</script>
+@endpush

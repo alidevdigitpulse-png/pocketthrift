@@ -14,8 +14,8 @@ class RegionService
      */
     public function getCurrentRegion()
     {
-        $regionCode = Session::get('current_region', 'us');
-        return Region::where('code', $regionCode)->where('active', true)->first();
+        $regionCode = trim(strtolower(Session::get('current_region', 'us')));
+        return Region::whereRaw('LOWER(TRIM(code)) = ?', [$regionCode])->where('active', true)->first();
     }
 
     /**
@@ -36,7 +36,8 @@ class RegionService
      */
     public function setCurrentRegion($regionCode)
     {
-        $region = Region::where('code', $regionCode)->where('active', true)->first();
+        $regionCode = trim(strtolower($regionCode));
+        $region = Region::whereRaw('LOWER(TRIM(code)) = ?', [$regionCode])->where('active', true)->first();
         
         if ($region) {
             Session::put('current_region', $regionCode);
@@ -139,7 +140,9 @@ class RegionService
      */
     public function getRegionCodes()
     {
-        return Region::where('active', true)->pluck('code')->toArray();
+        return Region::where('active', true)->get()->map(function($r) {
+            return trim(strtolower($r->code));
+        })->toArray();
     }
 
     /**

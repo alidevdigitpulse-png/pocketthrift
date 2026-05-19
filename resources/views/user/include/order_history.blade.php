@@ -74,17 +74,17 @@
 @push('css')
     <style>
         a.page-link {
-            color: #ff5900 !important;
+            color: #cf5103 !important;
         }
 
         .active>.page-link,
         .page-link.active {
-            background-color: #ff5900 !important;
-            border-color: #ff5900 !important;
+            background-color: #cf5103 !important;
+            border-color: #cf5103 !important;
         }
 
         .page-link:hover {
-            color: #ff5900 !important;
+            color: #cf5103 !important;
         }
     </style>
 @endpush

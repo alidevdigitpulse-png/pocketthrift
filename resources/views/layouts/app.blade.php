@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app()->getLocale() }}">
 
 <head>
+    <title>@yield('title')</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <meta name="description" content="@yield('meta_description')"/>
     <link rel="icon" href="{{ asset('uploads/favicon.png') }}" type="image/png">
-
-    <!--<link rel="icon" href="{{ asset($favicon) }}">-->
+    <link rel="canonical" href="{{ url()->current() }}"/>
     @stack('schemas')
     @include('layouts.components.css')
     <style>
@@ -30,7 +31,7 @@
         }
 
         .myaccount-tab-menu.nav a.active {
-            background: #ff5900;
+            background: #cf5103;
             color: white;
         }
 
@@ -39,11 +40,19 @@
         }
 
         .myaccount-tab-menu.nav a:hover {
-            background: #ff5900;
+            background: #cf5103;
             color: white;
         }
     </style>
     @stack('css')
+
+    {{-- Inject Active Head Tags --}}
+    @php
+        $activeHeadTags = \App\Models\HeadTag::where('status', 1)->get();
+    @endphp
+    @foreach($activeHeadTags as $tag)
+        {!! $tag->code !!}
+    @endforeach
 </head>
 
 <body>

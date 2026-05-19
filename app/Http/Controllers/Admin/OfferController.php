@@ -72,7 +72,11 @@ class OfferController extends Controller
         $offers = $query->orderBy('sort', 'asc')->orderBy('created_at', 'desc')->paginate(15);
 
         // Get related data for filters
-        $stores = Store::orderBy('title')->get();
+        if ($isAdmin) {
+            $stores = Store::orderBy('title')->get();
+        } else {
+            $stores = Store::where('country_codes', 'LIKE', '%' . $user->assigned_regions . '%')->orderBy('title')->get();
+        }
         $types = ['Deal', 'Offer', 'Code', 'Sale'];
         $regions = Region::all();
 
@@ -123,15 +127,15 @@ class OfferController extends Controller
             'store_id' => 'nullable|exists:stores,id',
             'seasonal_id' => 'nullable|exists:categories,id',
             'code' => 'nullable|string|max:255',
-            'discount' => 'nullable|numeric|min:0',
+            'discount' => 'nullable|string',
             'type' => 'required|in:Deal,Offer,Code,Sale',
-            'free_delivery' => 'in:active,inactive',
+            'free_delivery' => 'in:0,1',
             'terms_and_conditions' => 'nullable|string',
-            'verified' => 'in:active,inactive',
+            'verified' => 'in:0,1',
             'new_recently_updated' => 'boolean',
             'country_codes' => 'nullable|array',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
+            // 'start_date' => 'nullable|date',
+            // 'end_date' => 'nullable|date|after_or_equal:start_date',
             'active' => 'boolean',
             'sort' => 'integer|min:0'
         ]);
@@ -147,15 +151,12 @@ class OfferController extends Controller
         $offer->discount = $request->discount;
         $offer->affiliate_links = $request->affiliate_links;
         $offer->type = $request->type;
-        // $offer->free_delivery = $request->free_delivery ?? 'inactive';
-        $offer->free_delivery = ($request->free_delivery == 'active') ? 1 : 0;
+        $offer->free_delivery = $request->free_delivery ?? 0;
 
         $offer->terms_and_conditions = $request->terms_and_conditions;
-        // $offer->verified = $request->verified ?? 'inactive';
-        $offer->verified = ($request->verified == 'active') ? 1 : 0;
+        $offer->verified = $request->verified ?? 0;
 
 
-        // $offer->new_recently_updated = $request->has('new_recently_updated') ? 1 : 0;
         $offer->new_recently_updated = $request->has('new_recently_updated') ? 1 : 0;
 
         
@@ -173,12 +174,24 @@ class OfferController extends Controller
             $offer->country_codes = $user->assigned_regions;
         }
         
-        $offer->start_date = $request->start_date;
-        $offer->end_date = $request->end_date;
-        $offer->logo = $request->logo;
+        // $offer->start_date = $request->start_date;
+        // $offer->end_date = $request->end_date;
         $offer->active = $request->has('active') ? 1 : 0;
         $offer->sort = $request->sort ?? 0;
         $offer->created_by = Auth::id();
+        if ($request->hasFile('logo')) {
+            // File object
+            $file = $request->file('logo');
+
+            // Unique filename
+            $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+            // Path inside public folder
+            $file->move(public_path('uploads/store_icons'), $fileName);
+
+            // Save in DB - path relative to uploads folder
+            $offer->logo = 'store_icons/' . $fileName;
+        }
         $offer->save();
 
         return redirect()->route('admin.offer.index')->with('success', 'Offer created successfully.');
@@ -235,17 +248,18 @@ class OfferController extends Controller
             'store_id' => 'nullable|exists:stores,id',
             'seasonal_id' => 'nullable|exists:categories,id',
             'code' => 'nullable|string|max:255',
-            'discount' => 'nullable|numeric|min:0',
+            'discount' => 'nullable|string',
             'type' => 'required|in:Deal,Offer,Code,Sale',
-            'free_delivery' => 'in:active,inactive',
+            'free_delivery' => 'in:0,1',
             'terms_and_conditions' => 'nullable|string',
-            'verified' => 'in:active,inactive',
+            'verified' => 'in:0,1',
             'new_recently_updated' => 'boolean',
             'country_codes' => 'nullable|array',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
+            // 'start_date' => 'nullable|date',
+            // 'end_date' => 'nullable|date|after_or_equal:start_date',
             'active' => 'boolean',
-            'sort' => 'integer|min:0'
+            'sort' => 'integer|min:0',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048'
         ]);
 
         $user = Auth::user();
@@ -258,9 +272,9 @@ class OfferController extends Controller
         $offer->discount = $request->discount;
         $offer->affiliate_links = $request->affiliate_links;
         $offer->type = $request->type;
-        $offer->free_delivery = $request->free_delivery ?? 'inactive';
+        $offer->free_delivery = $request->free_delivery ?? 0;
         $offer->terms_and_conditions = $request->terms_and_conditions;
-        $offer->verified = $request->verified ?? 'inactive';
+        $offer->verified = $request->verified ?? 0;
         $offer->new_recently_updated = $request->has('new_recently_updated') ? 1 : 0;
         
         // For region-wise users, automatically assign their region
@@ -277,12 +291,24 @@ class OfferController extends Controller
             $offer->country_codes = $user->assigned_regions;
         }
         
-        $offer->start_date = $request->start_date;
-        $offer->end_date = $request->end_date;
-        $offer->logo = $request->logo;
+        // $offer->start_date = $request->start_date;
+        // $offer->end_date = $request->end_date;
         $offer->active = $request->has('active') ? 1 : 0;
         $offer->sort = $request->sort ?? 0;
         $offer->updated_by = Auth::id();
+        if ($request->hasFile('logo')) {
+            // File object
+            $file = $request->file('logo');
+
+            // Unique filename
+            $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+            // Path inside public folder
+            $file->move(public_path('uploads/store_icons'), $fileName);
+
+            // Save in DB - path relative to uploads folder
+            $offer->logo = 'store_icons/' . $fileName;
+        }
         $offer->save();
 
         return redirect()->route('admin.offer.index')->with('success', 'Offer updated successfully.');
@@ -296,10 +322,56 @@ class OfferController extends Controller
      */
     public function destroy(Offer $offer)
     {
-        $offer->deleted_by = Auth::id();
-        $offer->save();
-        $offer->delete();
+        // Permanently delete the offer from the database
+        $offer->forceDelete();
 
         return redirect()->route('admin.offer.index')->with('success', 'Offer deleted successfully.');
+    }
+
+    /**
+     * Update the sort order of offers.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateSort(Request $request)
+    {
+        $request->validate([
+            'order' => 'required|array',
+            'order.*' => 'required|integer|exists:offers,id'
+        ]);
+
+        foreach ($request->order as $index => $offerId) {
+            Offer::where('id', $offerId)->update(['sort' => $index + 1]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Sort order updated successfully']);
+    }
+
+    /**
+     * Update the sort order of a single offer.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateSingleSort(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:offers,id',
+            'sort' => 'required|integer'
+        ]);
+
+        try {
+            $offer = Offer::find($request->id);
+            if (!$offer) {
+                return response()->json(['success' => false, 'message' => 'Offer not found'], 404);
+            }
+            $offer->sort = $request->sort;
+            $offer->save();
+    
+            return response()->json(['success' => true, 'message' => 'Sort order updated successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
+        }
     }
 }

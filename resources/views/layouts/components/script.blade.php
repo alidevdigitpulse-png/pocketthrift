@@ -4,10 +4,10 @@
     crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.min.js" integrity="sha384-Rx+T1VzGupg4BHQYs2gCW9It+akI2MM/mndMCy36UVfodzcJcF0GGLxZIzObiEfa" crossorigin="anonymous"></script>
-    <script src="{{ asset('admin/js/toastr.js') }}"></script>
-    <script src="{{ asset('admin/js/script.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.min.js" integrity="sha384-Rx+T1VzGupg4BHQYs2gCW9It+akI2MM/mndMCy36UVfodzcJcF0GGLxZIzObiEfa" crossorigin="anonymous" defer></script>
+    <script src="{{ asset('admin/js/toastr.js') }}" defer></script>
+    <script src="{{ asset('admin/js/script.js') }}" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
 <script>
 
@@ -64,17 +64,19 @@
         
         var input = document.querySelector('.qty-value');
 
-        input.addEventListener('input', function() {
-            var value = input.value;
-            
-            value = value.replace(/^0+/, '');
-            
-            value = value.replace(/\D/g, '');
-            if (value.length > 3) {
-                value = value.slice(0, 3);
-            }
-            input.value = value;
-        });  
+        if (input) {
+            input.addEventListener('input', function() {
+                var value = input.value;
+                
+                value = value.replace(/^0+/, '');
+                
+                value = value.replace(/\D/g, '');
+                if (value.length > 3) {
+                    value = value.slice(0, 3);
+                }
+                input.value = value;
+            });
+        }  
     $(".qty-value").on('input', function() {
         var value = parseInt($(this).val());
         if (isNaN(value) || value < 1) {
@@ -94,10 +96,23 @@
 <script>
     @if (\Session::has('success'))
         $.toast({
-            heading: 'Sumbitted',
+            heading: 'Submitted',
             text: "{{ Session::get('success') }}",
             showHideTransition: 'slide',
             icon: 'success'
+        })
+    @endif
+    @if (\Session::has('error'))
+        @php
+            $error = Session::get('error');
+            $heading = is_array($error) ? $error['heading'] : 'Error';
+            $message = is_array($error) ? $error['message'] : $error;
+        @endphp
+        $.toast({
+            heading: '{{ $heading }}',
+            text: "{{ $message }}",
+            showHideTransition: 'slide',
+            icon: 'error'
         })
     @endif
 </script>

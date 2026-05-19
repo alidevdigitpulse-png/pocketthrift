@@ -41,5 +41,9 @@ class AppServiceProvider extends ServiceProvider
         ], false);
 
         View::share('favicon', 'uploads/favicon.ico'); // Placeholder path
+
+        if($this->app->environment('production')) {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
     }
 }

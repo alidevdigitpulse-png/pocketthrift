@@ -8,14 +8,10 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <div class="row align-items-center">
-                        <div class="col-6">
-                            <h4 class="card-title">Offers</h4>
-                        </div>
-                        <div class="col-6 text-end">
-                            <a href="{{ route('admin.offer.create') }}" class="btn btn-primary">Add New Offer</a>
-                        </div>
-                    </div>
+                    <div class="d-flex justify-content-between align-items-center box-header">
+                    <h3 class="box-title">Offers</h3>
+                    <a href="{{ route('admin.offer.create') }}" class="btn btn-primary pull-right"><i class="fa fa-plus"></i> Add New Offer</a>
+                </div>
                 </div>
                 <div class="card-body">
                     <div class="row mb-3">
@@ -43,7 +39,7 @@
                                         </select>
                                     </div>
                                     <div class="col-md-2">
-                                        <select name="store" class="form-control">
+                                        <select name="store" id="store_filter" class="form-control select2">
                                             <option value="">All Stores</option>
                                             @foreach($stores as $store)
                                                 <option value="{{ $store->id }}" {{ request('store') == $store->id ? 'selected' : '' }}>
@@ -142,16 +138,20 @@
                                                 {{ $offer->active ? 'Active' : 'Inactive' }}
                                             </span>
                                         </td>
-                                        <td>{{ $offer->sort }}</td>
+                                        <td>
+                                            <span class="sort-editable" data-id="{{ $offer->id }}" style="cursor: pointer; text-decoration: underline; color: #cf5103;">
+                                                {{ $offer->sort }}
+                                            </span>
+                                        </td>
                                         <td>{{ $offer->start_date ? $offer->start_date->format('Y-m-d') : 'N/A' }}</td>
                                         <td>{{ $offer->end_date ? $offer->end_date->format('Y-m-d') : 'N/A' }}</td>
                                         <td>
                                             <a href="{{ route('admin.offer.show', $offer->id) }}" class="btn btn-sm btn-info">View</a>
                                             <a href="{{ route('admin.offer.edit', $offer->id) }}" class="btn btn-sm btn-primary">Edit</a>
-                                            <form action="{{ route('admin.offer.destroy', $offer->id) }}" method="POST" class="d-inline">
+                                            <form action="{{ route('admin.offer.destroy', $offer->id) }}" method="POST" class="d-inline" id="delete-form-{{ $offer->id }}">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this offer?')">Delete</button>
+                                                <button type="button" class="btn btn-sm btn-danger" onclick="deleteOffer({{ $offer->id }})">Delete</button>
                                             </form>
                                         </td>
                                     </tr>
@@ -172,4 +172,100 @@
         </div>
     </div>
 </div>
+@push('css')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+@endpush
+
+@push('js')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    function deleteOffer(id) {
+      Swal.fire({
+          title: 'Are you sure?',
+          text: "You won't be able to revert this!",
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'Yes, delete it!'
+      }).then((result) => {
+          if (result.isConfirmed) {
+              document.getElementById('delete-form-' + id).submit();
+          }
+      })
+  }
+
+    $(function() {
+        // Initialize select2 for store filter
+        if ($('#store_filter').length) {
+            $('#store_filter').select2({
+                placeholder: 'All Stores',
+                allowClear: true
+            });
+        }
+
+
+        // Inline sort editing
+        $('.sort-editable').click(function() {
+            var $span = $(this);
+            var currentSort = $span.text().trim();
+            var offerId = $span.data('id');
+            
+            // If already editing, do nothing
+            if ($span.find('input').length > 0) return;
+
+            var $input = $('<input>', {
+                type: 'number',
+                value: currentSort,
+                class: 'form-control form-control-sm',
+                style: 'width: 80px; display: inline-block;'
+            });
+
+            $span.html($input);
+            $input.focus();
+
+            $input.on('blur keypress', function(e) {
+                if (e.type === 'keypress' && e.which !== 13) return;
+                
+                var newSort = $(this).val();
+                
+                // If value hasn't changed, revert to text
+                if (newSort === currentSort) {
+                    $span.text(currentSort);
+                    return;
+                }
+
+                $.ajax({
+                    url: '{{ route("admin.offer.update-single-sort") }}',
+                    method: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        id: offerId,
+                        sort: newSort
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $span.text(newSort);
+                            // Optional: Show success message/toast
+                            // toastr.success(response.message);
+                        } else {
+                            $span.text(currentSort);
+                            alert('Failed to update sort order');
+                        }
+                    },
+                    error: function(xhr) {
+                        $span.text(currentSort);
+                        var errorMsg = 'Error updating sort order';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        }
+                        alert(errorMsg);
+                    }
+                });
+            });
+        });
+    });
+</script>
+@endpush
 @endsection

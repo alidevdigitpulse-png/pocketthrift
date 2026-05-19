@@ -8,11 +8,8 @@
     $currentRegion = $regionService->getCurrentRegion();
 
     $regionCode = strtolower($currentRegion->code ?? 'us');
-    $regionName = $currentRegion->country ?? 'USA';
+    $regionName = $currentRegion->country ?? 'United States';
 
-    // Dynamic Meta Content
-    $catTitle = "Best Deals & Promo Codes by Category in $regionName";
-    $catDesc = "Find amazing deals and coupons on auto accessories, fashion, tech gadgets, and more. Save big across all categories and enjoy incredible savings in $regionName.";
 @endphp
 @php
     // Ensure $meta exists
@@ -21,7 +18,7 @@
     // Determine region code from URL
     $firstSegment = strtolower(request()->segment(1) ?? '');
     $regions = [
-        'us' => 'USA', 'uk' => 'United Kingdom', 'au' => 'Australia',
+        'us' => 'United States', 'uk' => 'United Kingdom', 'au' => 'Australia',
         'ca' => 'Canada', 'fr' => 'France', 'de' => 'Germany',
         'it' => 'Italy', 'nl' => 'Netherlands', 'pl' => 'Poland',
         'es' => 'Spain', 'mx' => 'Mexico', 'ch' => 'Switzerland',
@@ -32,6 +29,10 @@
     // Check if first segment is a valid region code
     $regionCode = array_key_exists($firstSegment, $regions) ? $firstSegment : 'us';
     $regionName = $regions[$regionCode];
+
+    // Dynamic Meta Content
+    $catTitle = __('Best Deals & Promo Codes by Category in :region', ['region' => $regionName]);
+    $catDesc = __('Find amazing deals and coupons on auto accessories, fashion, tech gadgets, and more. Save big across all categories and enjoy incredible savings in :region.', ['region' => $regionName]);
     
     // Base URL
     $baseUrl = rtrim(config('app.url','https://pocketthrift.com'), '/');
@@ -52,58 +53,57 @@
     $fullUrl = rtrim($siteUrl, '/') . '/' . ltrim($pathWithoutRegion, '/');
     
     // Page title & description
-    $title = $page->meta_title ?? $page->name ?? 'Best Deals & Promo Codes by Category in $regionName';
+    $title = $page->meta_title ?? $page->name ?? __('Best Deals & Promo Codes by Category in :region', ['region' => $regionName]);
     
-    // Replace $regionName placeholder in title if it exists
-    $title = str_replace('$regionName', $regionName, $title);
-    $title = str_replace('in the $regionName', 'in the ' . $regionName, $title);
+    // Replace placeholders in title
+    $title = str_replace(['$regionName', ':region'], $regionName, $title);
+    $title = str_replace('in the ' . $regionName, 'in ' . $regionName, $title); // Clean up common grammar issues
     
-    $description = $page->meta_description ?? "Find amazing deals and coupons on auto accessories, fashion, tech gadgets, and more. Save big across all categories and enjoy incredible savings in $regionName.";
+    $description = $page->meta_description ?? $catDesc;
     
-    // Replace $regionName placeholder in description if it exists
-    $description = str_replace('$regionName', $regionName, $description);
+    // Replace placeholders in description
+    $description = str_replace(['$regionName', ':region'], $regionName, $description);
     
     // Breadcrumbs setup
     $breadcrumbs = [
         [
             '@type' => 'ListItem',
             'position' => 1,
-            'name' => 'Home',
+            'name' => __('Home'),
             'item' => $siteUrl
         ],
         [
             '@type' => 'ListItem',
             'position' => 2,
-            'name' => 'Categories',
+            'name' => __('Categories'),
             'item' => $fullUrl
         ]
     ];
 @endphp
 
 @push('schemas')
-<title>{{ $catTitle }}</title>
-
-<meta name="description" content="{{ $catDesc }}">
+@section('title', $title)
+@section('meta_description', $description)
 <meta name="keywords" content="Offers and promo codes">
 <meta name="robots" content="index, follow">
 
 <meta property="og:url" content="{{ url()->current() }}">
-<meta property="og:title" content="{{ $catTitle }}">
-<meta property="og:description" content="{{ $catDesc }}">
+<meta property="og:title" content="{{ $title }}">
+<meta property="og:description" content="{{ $description }}">
 <meta property="og:image" content="https://pocketthrift.com/images/og-image.webp">
 
 <meta property="twitter:card" content="summary_large_image">
 <meta property="twitter:domain" content="pocketthrift.com">
 <meta property="twitter:url" content="{{ url()->current() }}">
-<meta property="twitter:title" content="{{ $catTitle }}">
-<meta property="twitter:description" content="{{ $catDesc }}">
+<meta property="twitter:title" content="{{ $title }}">
+<meta property="twitter:description" content="{{ $description }}">
 <meta property="twitter:image" content="https://pocketthrift.com/images/og-image.webp">
 <script type="application/ld+json">
 {!! json_encode([
     "@context" => "https://schema.org",
     "@type" => "WebPage",
-    "name" => $title,
-    "description" => $description,
+    "name" => str_replace('United States', 'USA', $title),
+    "description" => str_replace('United States', 'USA', $description),
     "url" => $fullUrl,
     "publisher" => [
         "@type" => "Organization",
@@ -132,21 +132,9 @@
         <div class="container">
             <div class="row">
                 <div class="col-12">
-                    <h1 class="mb-4 text-dark">All Categories</h1>
-                    <div class="secondary-heading">Verified On: October, 2025</div>
-                    <p>Are you on the hunt for the best deals on car accessories, fashion, tech gadgets, and more? You’ve
-                        come to the right place! Here at PocketThrift
-                               @if(request()->route('region'))
-                  {{ \App\Models\Region::where('code', request()->route('region'))->where('active', true)->first()->country ?? strtoupper(request()->route('region')) }}
-                @else
-                  USA
-                @endif
-                </h2>
-                        , you can find amazing discounts across a wide
-                        range of categories, from art supplies to baby products and everything in between. Our carefully
-                        curated selection of promo codes and deals helps you save big on top brands and essential items.
-                        Explore our site for unbeatable savings, and don’t miss out on fantastic bargains designed just for
-                        you. Start shopping smart today and enjoy significant discounts on your favorite products!
+                    <h1 class="mb-4 text-dark">{{ __('All Categories') }}</h1>
+                    <div class="secondary-heading">{{ __('Verified On') }}: {{ __(date('F')) }}, {{ date('Y') }}</div>
+                    <p>{{ __('Are you on the hunt for the best deals on car accessories, fashion, tech gadgets, and more? You’ve come to the right place! Here at PocketThrift. :region , you can find amazing discounts across a wide range of categories, from art supplies to baby products and everything in between. Our carefully curated selection of promo codes and deals helps you save big on top brands and essential items. Explore our site for unbeatable savings, and don’t miss out on fantastic bargains designed just for you. Start shopping smart today and enjoy significant discounts on your favorite products!', ['region' => $regionName]) }}
                     </p>
 
                 </div>
@@ -157,13 +145,7 @@
     <div class="category-cards">
         <div class="container">
             <div class="top-categories-widget pb-5">
-                <h2 class="mt-5 pb-3">Top Categories for Coupons and Deals in the 
-                @if(request()->route('region'))
-                  {{ \App\Models\Region::where('code', request()->route('region'))->where('active', true)->first()->country ?? strtoupper(request()->route('region')) }}
-                @else
-                  USA
-                @endif
-                </h2>
+                <h2 class="mt-5 pb-3">{{ __('Top Categories for Coupons and Deals in the :region', ['region' => $regionName]) }}
 
 
                 <!-- Alphabet Filter -->
@@ -183,7 +165,7 @@
                     <!-- Search Bar -->
                     <div class="search-bar ms-auto" style="min-width: 150px;">
                         <input type="text" id="searchInput" class="form-control form-control-sm"
-                            placeholder="Search categories...">
+                            placeholder="{{ __('Search categories...') }}">
                     </div>
                 </div>
 
@@ -192,7 +174,7 @@
                     @if (isset($categories) && $categories->count() > 0)
                         @foreach ($categories as $category) 
                             <div class="col-6 col-sm-6 col-md-4 col-lg-3">
-                                <a href="{{ route('category.detail', ltrim($category->url_slug, '/')) }}"
+                                <a href="{{ ($regionCode === 'us' || !$regionCode) ? route('category.detail', ltrim($category->url_slug, '/')) : route('region.category.detail', ['region' => $regionCode, 'category' => ltrim($category->url_slug, '/')]) }}"
                                     class="text-decoration-none">
                                     <div class="category-card">
                                         <div class="category-img">
@@ -367,6 +349,7 @@
             font-weight: 600;
             color: #000;
             font-size: 14px;
+            overflow-wrap: anywhere;
         }
 
         .category-info p {
@@ -417,13 +400,13 @@
             <div class="container py-3">
                 <ul class="list-unstyled d-flex align-items-center gap-2 mb-0">
                     <li class="d-flex align-items-center">
-                        <a href="{{ route('home') }}" class="text-decoration-none">Home</a>
+                        <a href="{{ ($regionCode === 'us' || !$regionCode) ? route('home') : route('region.home', ['region' => $regionCode]) }}" class="text-decoration-none">{{ __('Home') }}</a>
                         <svg fill="rgba(0,0,0,1)" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg">
                             <path d="M13.1717 12.0007L8.22192 7.05093L9.63614 5.63672L16.0001 12.0007L9.63614 18.3646L8.22192 16.9504L13.1717 12.0007Z"></path>
                         </svg>
                     </li>
                     <li class="d-flex align-items-center">
-                        <span class="fw-semibold">Categories</span>
+                        <span class="fw-semibold">{{ __('Categories') }}</span>
                     </li>
                 </ul>
             </div>

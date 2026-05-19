@@ -9,13 +9,13 @@
                     <h4 class="card-title">Create New Category</h4>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('admin.category.store') }}" method="POST">
+                    <form action="{{ route('admin.category.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="title">Title <span class="text-danger">*</span></label>
-                                    <input type="text" name="title" id="title" class="form-control @error('title') is-invalid @enderror" value="{{ old('title') }}" required>
+                                    <input type="text" name="title" id="title" class="form-control @error('title') is-invalid @enderror" value="{{ old('title') }}" maxlength="255" required>
                                     @error('title')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -24,7 +24,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="title_eng">Title (English)</label>
-                                    <input type="text" name="title_eng" id="title_eng" class="form-control @error('title_eng') is-invalid @enderror" value="{{ old('title_eng') }}">
+                                    <input type="text" name="title_eng" id="title_eng" class="form-control @error('title_eng') is-invalid @enderror" value="{{ old('title_eng') }}" maxlength="255">
                                     @error('title_eng')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -36,7 +36,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="seo_title">SEO Title</label>
-                                    <input type="text" name="seo_title" id="seo_title" class="form-control @error('seo_title') is-invalid @enderror" value="{{ old('seo_title') }}">
+                                    <input type="text" name="seo_title" id="seo_title" class="form-control @error('seo_title') is-invalid @enderror" value="{{ old('seo_title') }}" maxlength="255">
                                     @error('seo_title')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -45,7 +45,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="url_slug">URL Slug <span class="text-danger">*</span></label>
-                                    <input type="text" name="url_slug" id="url_slug" class="form-control @error('url_slug') is-invalid @enderror" value="{{ old('url_slug') }}" required>
+                                    <input type="text" name="url_slug" id="url_slug" class="form-control @error('url_slug') is-invalid @enderror" value="{{ old('url_slug') }}" maxlength="255" required>
                                     @error('url_slug')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -57,7 +57,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="meta_description">Meta Description</label>
-                                    <textarea name="meta_description" id="meta_description" class="form-control @error('meta_description') is-invalid @enderror" rows="3">{{ old('meta_description') }}</textarea>
+                                    <textarea name="meta_description" id="meta_description" class="form-control @error('meta_description') is-invalid @enderror" rows="3" maxlength="255">{{ old('meta_description') }}</textarea>
                                     @error('meta_description')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -66,7 +66,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="seo_meta_keyword">SEO Meta Keywords</label>
-                                    <textarea name="seo_meta_keyword" id="seo_meta_keyword" class="form-control @error('seo_meta_keyword') is-invalid @enderror" rows="3">{{ old('seo_meta_keyword') }}</textarea>
+                                    <textarea name="seo_meta_keyword" id="seo_meta_keyword" class="form-control @error('seo_meta_keyword') is-invalid @enderror" rows="3" maxlength="255">{{ old('seo_meta_keyword') }}</textarea>
                                     @error('seo_meta_keyword')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -78,7 +78,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="title_h1">H1 Title</label>
-                                    <input type="text" name="title_h1" id="title_h1" class="form-control @error('title_h1') is-invalid @enderror" value="{{ old('title_h1') }}">
+                                    <input type="text" name="title_h1" id="title_h1" class="form-control @error('title_h1') is-invalid @enderror" value="{{ old('title_h1') }}" maxlength="255">
                                     @error('title_h1')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -87,7 +87,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="subtitle_h2">H2 Subtitle</label>
-                                    <input type="text" name="subtitle_h2" id="subtitle_h2" class="form-control @error('subtitle_h2') is-invalid @enderror" value="{{ old('subtitle_h2') }}">
+                                    <input type="text" name="subtitle_h2" id="subtitle_h2" class="form-control @error('subtitle_h2') is-invalid @enderror" value="{{ old('subtitle_h2') }}" maxlength="255">
                                     @error('subtitle_h2')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -111,7 +111,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="logo">Logo</label>
-                                    <input type="text" name="logo" id="logo" class="form-control @error('logo') is-invalid @enderror" value="{{ old('logo') }}">
+                                    <input type="file" name="logo" id="logo" class="dropify @error('logo') is-invalid @enderror">
                                     @error('logo')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -120,7 +120,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="image_alt">Image Alt Text</label>
-                                    <input type="text" name="image_alt" id="image_alt" class="form-control @error('image_alt') is-invalid @enderror" value="{{ old('image_alt') }}">
+                                    <input type="text" name="image_alt" id="image_alt" class="form-control @error('image_alt') is-invalid @enderror" value="{{ old('image_alt') }}" maxlength="255">
                                     @error('image_alt')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -132,7 +132,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="image_title">Image Title</label>
-                                    <input type="text" name="image_title" id="image_title" class="form-control @error('image_title') is-invalid @enderror" value="{{ old('image_title') }}">
+                                    <input type="text" name="image_title" id="image_title" class="form-control @error('image_title') is-invalid @enderror" value="{{ old('image_title') }}" maxlength="255">
                                     @error('image_title')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -143,27 +143,6 @@
                                     <label for="meta_robots">Meta Robots</label>
                                     <input type="text" name="meta_robots" id="meta_robots" class="form-control @error('meta_robots') is-invalid @enderror" value="{{ old('meta_robots', 'index, follow') }}" maxlength="255">
                                     @error('meta_robots')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="start_date">Start Date</label>
-                                    <input type="date" name="start_date" id="start_date" class="form-control @error('start_date') is-invalid @enderror" value="{{ old('start_date') }}">
-                                    @error('start_date')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="end_date">End Date</label>
-                                    <input type="date" name="end_date" id="end_date" class="form-control @error('end_date') is-invalid @enderror" value="{{ old('end_date') }}">
-                                    @error('end_date')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
@@ -184,7 +163,8 @@
                                 <div class="form-group">
                                     <label for="active">Status</label>
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" role="switch" id="active" name="active" value="1" {{ old('active') ? 'checked' : '' }}>
+                                        <input class="form-check-input" type="checkbox" role="switch" id="active" name="active" value="1" {{ old('active', true) ? 'checked' : '' }}>
+
                                         <label class="form-check-label" for="active">Active</label>
                                     </div>
                                     @error('active')

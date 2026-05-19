@@ -19,6 +19,18 @@
                             <span>Region Dashboard</span>
                         </a>
                     </li>
+                    <li class="{{ currentSelectedURL('admin.region.dashboard.trending.form') }}">
+                        <a href="{{ route('admin.region.dashboard.trending.form') }}">
+                            <i class="fa-solid fa-fire"></i>
+                            <span>Trending Items</span>
+                        </a>
+                    </li>
+                    <li class="{{ currentSelectedURL('head-tag.index') }}">
+                        <a href="{{ route('head-tag.index') }}">
+                            <i class="fa-solid fa-code"></i>
+                            <span>Head Tags</span>
+                        </a>
+                    </li>
                     <li class="treeview">
                         @canany([
                             'config',
@@ -52,6 +64,7 @@
                                         Logo</a>
                                 </li>
                             @endcan
+
                             @can('edit config')
                                 <li class="{{ currentSelectedURL('admin.config.settings') }}">
                                     <a href="{{ route('admin.config.settings') }}">
@@ -59,59 +72,9 @@
                                         Config</a>
                                 </li>
                             @endcan
-                        </ul>
-                    </li>
-                    @role('admin|super admin')
-                    <li class="treeview">
-                        <a href="#">
-                            <i class="fa-solid fa-image"></i>
-                            <span>Banner Management</span>
-                            <span class="pull-right-container">
-                                <i class="fa fa-angle-right pull-right"></i>
-                            </span>
-                        </a>
-                        <ul class="treeview-menu">
-                            <li class="{{ currentSelectedURL('banner.create') }}">
-                                <a href="{{ route('banner.create') }}">
-                                    <i class="fa-regular fa-circle-dot"></i> Add Banner</a>
-                            </li>
-                            <li class="{{ currentSelectedURL('banner.index') }}">
-                                <a href="{{ route('banner.index') }}">
-                                    <i class="fa-regular fa-circle-dot"></i> Banner List</a>
-                            </li>
-                        </ul>
-                    </li>
-                    @endrole
-                    
 
-                    <li class="header">Content Management System</li>
-                    @if(auth()->user()->role == 1 || auth()->user()->hasRole('admin') || auth()->user()->assigned_regions)
-                    <li class="treeview">
-                        <a href="#">
-                            <i class="fa-solid fa-sheet-plastic"></i>
-                            <span>Pages</span>
-                            <span class="pull-right-container">
-                                <i class="fa fa-angle-right pull-right"></i>
-                            </span>
-                        </a>
-                        <ul class="treeview-menu">
-                            @if(auth()->user()->role == 1 || auth()->user()->hasRole('admin') || auth()->user()->assigned_regions)
-                                <li class="{{ (request()->routeIs('admin.region.page.create') || request()->routeIs('page.create')) ? 'active' : '' }}">
-                                    <a href="{{ auth()->user()->assigned_regions && !auth()->user()->hasRole('admin') && auth()->user()->role != 1 ? route('admin.region.page.create') : route('admin.page.create') }}">
-                                        <i class="fa-regular fa-circle-dot"></i>
-                                        Add Page</a>
-                                </li>
-                            @endif
-                            @if(auth()->user()->role == 1 || auth()->user()->hasRole('admin') || auth()->user()->assigned_regions)
-                                <li class="{{ (request()->routeIs('admin.region.page.index') || request()->routeIs('admin.page.index')) ? 'active' : '' }}">
-                                    <a href="{{ auth()->user()->assigned_regions && !auth()->user()->hasRole('admin') && auth()->user()->role != 1 ? route('admin.region.page.index') : route('admin.page.index') }}">
-                                        <i class="fa-regular fa-circle-dot"></i>
-                                        Page List</a>
-                                </li>
-                            @endif
                         </ul>
                     </li>
-                    @endif
 
                     @foreach ($laravelAdminMenus->menus as $section)
                         @if ($section->items)
@@ -217,6 +180,26 @@
                         </ul>
                     </li>
 
+                    <li class="treeview">
+                        <a href="#">
+                            <i class="fa-solid fa-image"></i>
+                            <span>Banners</span>
+                            <span class="pull-right-container">
+                                <i class="fa fa-angle-right pull-right"></i>
+                            </span>
+                        </a>
+                        <ul class="treeview-menu">
+                            <li class="{{ currentSelectedURL('admin.banner.create') }}">
+                                <a href="{{ route('admin.banner.create') }}">
+                                    <i class="fa-regular fa-circle-dot"></i> Add Banner</a>
+                            </li>
+                            <li class="{{ currentSelectedURL('admin.banner.index') }}">
+                                <a href="{{ route('admin.banner.index') }}">
+                                    <i class="fa-regular fa-circle-dot"></i> Banners List</a>
+                            </li>
+                        </ul>
+                    </li>
+
                     
                                 
                     <li class="treeview">
@@ -267,6 +250,26 @@
 
                     <li class="treeview">
                         <a href="#">
+                            <i class="fa-solid fa-file"></i>
+                            <span>Pages</span>
+                            <span class="pull-right-container">
+                                <i class="fa fa-angle-right pull-right"></i>
+                            </span>
+                        </a>
+                        <ul class="treeview-menu">
+                            <li class="{{ currentSelectedURL('admin.page.create') }}">
+                                <a href="{{ route('admin.page.create') }}">
+                                    <i class="fa-regular fa-circle-dot"></i> Add Page</a>
+                            </li>
+                            <li class="{{ currentSelectedURL('admin.page.index') }}">
+                                <a href="{{ route('admin.page.index') }}">
+                                    <i class="fa-regular fa-circle-dot"></i> Pages List</a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="treeview">
+                        <a href="#">
                             <i class="fa-solid fa-blog"></i>
                             <span>Blogs</span>
                             <span class="pull-right-container">
@@ -281,6 +284,26 @@
                             <li class="{{ currentSelectedURL('admin.blog.index') }}">
                                 <a href="{{ route('admin.blog.index') }}">
                                     <i class="fa-regular fa-circle-dot"></i> Blogs List</a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="treeview">
+                        <a href="#">
+                            <i class="fa-solid fa-share-nodes"></i>
+                            <span>Social Apps</span>
+                            <span class="pull-right-container">
+                                <i class="fa fa-angle-right pull-right"></i>
+                            </span>
+                        </a>
+                        <ul class="treeview-menu">
+                            <li class="{{ currentSelectedURL('admin.social-app.create') }}">
+                                <a href="{{ route('admin.social-app.create') }}">
+                                    <i class="fa-regular fa-circle-dot"></i> Add Social App</a>
+                            </li>
+                            <li class="{{ currentSelectedURL('admin.social-app.index') }}">
+                                <a href="{{ route('admin.social-app.index') }}">
+                                    <i class="fa-regular fa-circle-dot"></i> Social Apps List</a>
                             </li>
                         </ul>
                     </li>
@@ -313,6 +336,7 @@
                         </ul>
                     </li>
                     
+                    @role('admin|super admin')
                     <li class="treeview">
                         <a href="#">
                             <i class="fa-solid fa-map"></i>
@@ -332,6 +356,7 @@
                             </li>
                         </ul>
                     </li>
+                    @endrole
                 </ul>
             </div>
         </div>

@@ -31,6 +31,7 @@ class RegionDashboardController extends Controller
         $storesQuery = Store::query();
         $categoriesQuery = Category::query();
         $offersQuery = Offer::query();
+        $blogsQuery = Blog::query();
         
         // Apply region-based filtering for non-admin users
         if (!$isAdmin) {
@@ -41,11 +42,13 @@ class RegionDashboardController extends Controller
                 $storesQuery->byRegionCodes($userRegionCodes);
                 $categoriesQuery->byRegionCodes($userRegionCodes);
                 $offersQuery->byRegionCodes($userRegionCodes);
+                $blogsQuery->byRegionCodes($userRegionCodes);
             } else {
                 // If user has no regions, show empty results
                 $storesQuery->whereRaw('1 = 0');
                 $categoriesQuery->whereRaw('1 = 0');
                 $offersQuery->whereRaw('1 = 0');
+                $blogsQuery->whereRaw('1 = 0');
             }
         }
         
@@ -53,11 +56,13 @@ class RegionDashboardController extends Controller
         $storesCount = $storesQuery->count();
         $categoriesCount = $categoriesQuery->count();
         $offersCount = $offersQuery->count();
+        $blogsCount = $blogsQuery->count();
         
         // Get recent items
         $recentStores = $storesQuery->with('category')->orderBy('created_at', 'desc')->limit(5)->get();
         $recentCategories = $categoriesQuery->orderBy('created_at', 'desc')->limit(5)->get();
         $recentOffers = $offersQuery->with('store')->orderBy('created_at', 'desc')->limit(5)->get();
+        $recentBlogs = $blogsQuery->with('category')->orderBy('created_at', 'desc')->limit(5)->get();
         
         // Get user's regions for trending items
         $userRegionIds = [];
@@ -100,7 +105,7 @@ class RegionDashboardController extends Controller
                     $trendingCategories->push($item);
                 }
             }
-            $trendingCategories = $trendingCategories->take(5);
+            $trendingCategories = $trendingCategories->take(6);
 
             // Get trending items for offers
             $trendingOfferItems = TrendingItem::byRegionAndType($regionId, 'offer')
@@ -114,11 +119,25 @@ class RegionDashboardController extends Controller
                     $trendingOffers->push($item);
                 }
             }
-            $trendingOffers = $trendingOffers->take(5);
+            $trendingOffers = $trendingOffers->take(9);
+
+            // Get trending items for blogs
+            $trendingBlogItems = TrendingItem::byRegionAndType($regionId, 'blog')
+                ->get();
+            
+            $trendingBlogs = collect();
+            foreach ($trendingBlogItems as $trendingItem) {
+                $item = $trendingItem->item; // Load the related item
+                if ($item) {
+                    $item->load('category'); // Then load the nested relationship
+                    $trendingBlogs->push($item);
+                }
+            }
+            $trendingBlogs = $trendingBlogs->take(8);
         } else {
             // Fallback to algorithmic trending if no regions
             $trendingStores = $storesQuery->with('category')->where('active', true)->orderBy('updated_at', 'desc')->limit(5)->get();
-            $trendingCategories = $categoriesQuery->where('active', true)->orderBy('updated_at', 'desc')->limit(5)->get();
+            $trendingCategories = $categoriesQuery->where('active', true)->orderBy('updated_at', 'desc')->limit(6)->get();
             $trendingOffers = $offersQuery->with('store')
                 ->where('active', true)
                 ->where(function($query) {
@@ -126,8 +145,9 @@ class RegionDashboardController extends Controller
                           ->orWhere('end_date', '>=', now());
                 })
                 ->orderBy('updated_at', 'desc')
-                ->limit(5)
+                ->limit(9)
                 ->get();
+            $trendingBlogs = $blogsQuery->with('category')->where('active', true)->orderBy('updated_at', 'desc')->limit(8)->get();
         }
         
         // Get all regions for filter
@@ -140,12 +160,15 @@ class RegionDashboardController extends Controller
             'storesCount',
             'categoriesCount',
             'offersCount',
+            'blogsCount',
             'recentStores',
             'recentCategories',
             'recentOffers',
+            'recentBlogs',
             'trendingStores',
             'trendingCategories',
             'trendingOffers',
+            'trendingBlogs',
             'regions',
             'userRegions',
             'isAdmin'
@@ -210,43 +233,50 @@ class RegionDashboardController extends Controller
         $storesQuery = Store::query();
         $categoriesQuery = Category::query();
         $offersQuery = Offer::query();
+        $blogsQuery = Blog::query();
         
         if (!$isAdmin && $selectedRegion) {
             $regionCodes = [$selectedRegion];
             $storesQuery->byRegionCodes($regionCodes);
             $categoriesQuery->byRegionCodes($regionCodes);
             $offersQuery->byRegionCodes($regionCodes);
+            $blogsQuery->byRegionCodes($regionCodes);
         } elseif (!$selectedRegion && !$isAdmin) {
             $userRegionCodes = $this->getUserRegionCodes($user);
             if (!empty($userRegionCodes)) {
                 $storesQuery->byRegionCodes($userRegionCodes);
                 $categoriesQuery->byRegionCodes($userRegionCodes);
                 $offersQuery->byRegionCodes($userRegionCodes);
+                $blogsQuery->byRegionCodes($userRegionCodes);
             } else {
                 // If user has no regions, show empty results
                 $storesQuery->whereRaw('1 = 0');
                 $categoriesQuery->whereRaw('1 = 0');
                 $offersQuery->whereRaw('1 = 0');
+                $blogsQuery->whereRaw('1 = 0');
             }
         }
         
         $recentStores = $storesQuery->with('category')->orderBy('created_at', 'desc')->limit(5)->get();
         $recentCategories = $categoriesQuery->orderBy('created_at', 'desc')->limit(5)->get();
         $recentOffers = $offersQuery->with('store')->orderBy('created_at', 'desc')->limit(5)->get();
+        $recentBlogs = $blogsQuery->with('category')->orderBy('created_at', 'desc')->limit(5)->get();
         
         // Return partial view or JSON based on request
         if ($request->ajax()) {
             return response()->json([
                 'recentStores' => $recentStores,
                 'recentCategories' => $recentCategories,
-                'recentOffers' => $recentOffers
+                'recentOffers' => $recentOffers,
+                'recentBlogs' => $recentBlogs
             ]);
         }
         
         return view('admin.region-dashboard.partials.data-tables', compact(
             'recentStores', 
             'recentCategories', 
-            'recentOffers'
+            'recentOffers',
+            'recentBlogs'
         ));
     }
 
@@ -259,7 +289,8 @@ class RegionDashboardController extends Controller
         $isAdmin = $user->role == 1 || $user->hasRole('admin') || $user->hasRole('super admin');
 
         // Determine region for the user
-        $regionId = null;
+        $regionId = $request->input('region_id');
+        
         if (!$isAdmin) {
             $userRegionCodes = $this->getUserRegionCodes($user);
             if (!empty($userRegionCodes)) {
@@ -418,13 +449,10 @@ class RegionDashboardController extends Controller
         // Get all items for selection with relationships
         $allStores = $storesQuery->with('category')->where('active', true)->orderBy('title')->get();
         $allCategories = $categoriesQuery->where('active', true)->orderBy('title')->get();
-        $allOffers = $offersQuery->with('store')->where('active', true)
-            ->where(function($query) {
-                $query->whereNull('end_date')
-                      ->orWhere('end_date', '>=', now());
-            })
-            ->orderBy('title')
-            ->get();
+        
+        // For trending selection, DO NOT load all offers here to avoid memory issues
+        // Offers will be loaded on-demand via AJAX when a store is selected
+        $allOffers = collect(); // Empty collection
         $allBlogs = $blogsQuery->with('category')->where('active', true)->orderBy('title')->get();
 
         // Get distinct categories for store filtering (based on currently available stores)
@@ -440,17 +468,35 @@ class RegionDashboardController extends Controller
             }
         }
 
-        // Get distinct stores for offer filtering (based on currently available offers)
+        // Get distinct stores for offer filtering (stores that have offers in this region)
+        // Since we no longer load all offers upfront, we need to query stores that have offers directly
         $availableOfferStores = collect();
-        if ($allOffers->count() > 0) {
-            $offerStoreIds = $allOffers->pluck('store_id')->unique()->filter();
-            if ($offerStoreIds->count() > 0) {
-                // Get only stores that are assigned to current offers and in user's region
-                $availableOfferStores = Store::whereIn('id', $offerStoreIds)
-                    ->with('category') // Eager load category for display consistency
-                    ->where('active', true)
-                    ->orderBy('title')
-                    ->get();
+        
+        if (!$isAdmin) {
+            $userRegionCodes = $this->getUserRegionCodes($user);
+            if (!empty($userRegionCodes)) {
+                // Get stores that have at least one active offer in this region
+                $availableOfferStores = Store::whereHas('offers', function($query) use ($userRegionCodes) {
+                    $query->where('active', true)
+                          ->byRegionCodes($userRegionCodes);
+                })
+                ->with('category')
+                ->where('active', true)
+                ->orderBy('title')
+                ->get();
+            }
+        } elseif ($regionId) {
+            $region = Region::find($regionId);
+            if ($region && !empty($region->code)) {
+                // Get stores that have at least one active offer in this region
+                $availableOfferStores = Store::whereHas('offers', function($query) use ($region) {
+                    $query->where('active', true)
+                          ->byRegionCodes([$region->code]);
+                })
+                ->with('category')
+                ->where('active', true)
+                ->orderBy('title')
+                ->get();
             }
         }
         
@@ -483,7 +529,9 @@ class RegionDashboardController extends Controller
         // Get currently selected trending items for this region
         $currentTrendingStores = collect();
         $currentTrendingCategories = collect();
-        $currentTrendingOffers = collect();
+        $currentTrendingOffersRow1 = collect();
+        $currentTrendingOffersRow2 = collect();
+        $currentTrendingOffersRow3 = collect();
         $currentTrendingBlogs = collect();
 
         if ($regionId) {
@@ -497,7 +545,20 @@ class RegionDashboardController extends Controller
                 ->orderBy('position')
                 ->get()->pluck('item_id')->toArray();
 
-            $currentTrendingOffers = TrendingItem::byRegionAndType($regionId, 'offer')
+            $currentTrendingOffersRow1 = TrendingItem::byRegionAndType($regionId, 'offer')
+                ->where('row', 1)
+                ->with('item')
+                ->orderBy('position')
+                ->get()->pluck('item_id')->toArray();
+
+            $currentTrendingOffersRow2 = TrendingItem::byRegionAndType($regionId, 'offer')
+                ->where('row', 2)
+                ->with('item')
+                ->orderBy('position')
+                ->get()->pluck('item_id')->toArray();
+
+            $currentTrendingOffersRow3 = TrendingItem::byRegionAndType($regionId, 'offer')
+                ->where('row', 3)
                 ->with('item')
                 ->orderBy('position')
                 ->get()->pluck('item_id')->toArray();
@@ -517,7 +578,9 @@ class RegionDashboardController extends Controller
             'fallbackCategories',
             'currentTrendingStores',
             'currentTrendingCategories',
-            'currentTrendingOffers',
+            'currentTrendingOffersRow1',
+            'currentTrendingOffersRow2',
+            'currentTrendingOffersRow3',
             'currentTrendingBlogs',
             'regionId',
             'isAdmin',
@@ -537,13 +600,17 @@ class RegionDashboardController extends Controller
 
         $request->validate([
             'region_id' => 'required|exists:regions,id',
-            'trending_stores' => 'array|max:5',
+            'trending_stores' => 'array|max:12',
             'trending_stores.*' => 'integer',
-            'trending_categories' => 'array|max:5',
+            'trending_categories' => 'array|max:6',
             'trending_categories.*' => 'integer',
-            'trending_offers' => 'array|max:5',
-            'trending_offers.*' => 'integer',
-            'trending_blogs' => 'array|max:5',
+            'trending_offers_row1' => 'array|max:9',
+            'trending_offers_row1.*' => 'integer',
+            'trending_offers_row2' => 'array|max:9',
+            'trending_offers_row2.*' => 'integer',
+            'trending_offers_row3' => 'array|max:9',
+            'trending_offers_row3.*' => 'integer',
+            'trending_blogs' => 'array|max:8',
             'trending_blogs.*' => 'integer',
         ]);
 
@@ -687,15 +754,44 @@ class RegionDashboardController extends Controller
             }
         }
 
-        // Add new trending offers
-        if ($request->has('trending_offers')) {
-            foreach ($request->input('trending_offers') as $index => $offerId) {
+        // Add new trending offers for Row 1
+        if ($request->has('trending_offers_row1')) {
+            foreach ($request->input('trending_offers_row1') as $index => $offerId) {
                 TrendingItem::create([
                     'item_type' => 'offer',
                     'item_id' => $offerId,
                     'region_id' => $regionId,
                     'user_id' => $user->id,
-                    'position' => $index + 1
+                    'position' => $index + 1,
+                    'row' => 1
+                ]);
+            }
+        }
+
+        // Add new trending offers for Row 2
+        if ($request->has('trending_offers_row2')) {
+            foreach ($request->input('trending_offers_row2') as $index => $offerId) {
+                TrendingItem::create([
+                    'item_type' => 'offer',
+                    'item_id' => $offerId,
+                    'region_id' => $regionId,
+                    'user_id' => $user->id,
+                    'position' => $index + 1,
+                    'row' => 2
+                ]);
+            }
+        }
+
+        // Add new trending offers for Row 3
+        if ($request->has('trending_offers_row3')) {
+            foreach ($request->input('trending_offers_row3') as $index => $offerId) {
+                TrendingItem::create([
+                    'item_type' => 'offer',
+                    'item_id' => $offerId,
+                    'region_id' => $regionId,
+                    'user_id' => $user->id,
+                    'position' => $index + 1,
+                    'row' => 3
                 ]);
             }
         }
@@ -714,5 +810,45 @@ class RegionDashboardController extends Controller
         }
 
         return redirect()->back()->with('success', 'Trending items updated successfully!');
+    }
+
+    /**
+     * Get offers for a specific store (AJAX endpoint)
+     */
+    public function getStoreOffers(Request $request)
+    {
+        $storeId = $request->input('store_id');
+        $regionId = $request->input('region_id');
+        
+        if (!$storeId) {
+            return response()->json(['error' => 'Store ID is required'], 400);
+        }
+
+        $user = Auth::user();
+        $isAdmin = $user->role == 1 || $user->hasRole('admin') || $user->hasRole('super admin');
+
+        // Build the offers query
+        $offersQuery = Offer::where('store_id', $storeId)
+            ->where('active', true);
+
+        // Apply region filtering if region is specified
+        if ($regionId && !$isAdmin) {
+            $region = Region::find($regionId);
+            if ($region && !empty($region->code)) {
+                $offersQuery->byRegionCodes([$region->code]);
+            }
+        } elseif ($regionId && $isAdmin) {
+            $region = Region::find($regionId);
+            if ($region && !empty($region->code)) {
+                $offersQuery->byRegionCodes([$region->code]);
+            }
+        }
+
+        $offers = $offersQuery->orderBy('title')->get(['id', 'title', 'type', 'discount']);
+
+        return response()->json([
+            'success' => true,
+            'offers' => $offers
+        ]);
     }
 }

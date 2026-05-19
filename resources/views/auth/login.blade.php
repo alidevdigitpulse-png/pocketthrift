@@ -26,7 +26,7 @@
     </style>
 </head>
     
-<body class="hold-transition theme-primary bg-img" style="background-image: url({{ asset('admin/image/login-bg.webp')  }})">
+<body class="hold-transition theme-primary bg-img" style="background-image: url({{ asset('admin/image/login-bg.jpg')  }})">
     
     <div class="container h-p100">
         <div class="row align-items-center justify-content-md-center h-p100">   
@@ -34,7 +34,7 @@
             <div class="col-12">
                 <div class="row justify-content-center no-gutters">
                     <div class="col-lg-5 col-md-5 col-12">
-                        <div class="bg-white rounded30 shadow-lg">
+                        <div class="login-panel rounded30 shadow-lg">
                             <div class="content-top-agile p-20 pb-0">
                                 @if($errors->any())
                                 <div class="alert alert-danger">

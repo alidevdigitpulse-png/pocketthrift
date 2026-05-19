@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Support\Facades\Route;
@@ -10,18 +11,17 @@ use App\Http\Controllers\{
     SuperAdminController,
     UserController,
     RegionChangeController,
-    RegionController
+    RegionController,
+    SitemapController
 };
 use App\Http\Controllers\Admin\{
     AdminController,
-    BannerController,
     CategoryController,
     ConfigController,
     CustomerController,
     InquiryController,
     OfferController,
     OrderController,
-    PageController,
     PermissionsController,
     RegionController as AdminRegionController,
     RegionDashboardController,
@@ -60,6 +60,10 @@ Route::get('auth/google/callback', [UserController::class, 'handleGoogleCallback
 // Inquiry route
 Route::post('/inquiry-submit', [InquiryController::class, 'submit'])->name('inquiry.submit');
 
+// Sitemap routes
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
+Route::get('/{region}/sitemap.xml', [SitemapController::class, 'regionSitemap'])->where('region', '[a-z]{2}')->name('region.sitemap');
+
 // Non-prefixed routes for US region
 Route::group(['middleware' => [\App\Http\Middleware\RegionMiddleware::class]], function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -72,19 +76,18 @@ Route::group(['middleware' => [\App\Http\Middleware\RegionMiddleware::class]], f
         $regions = \App\Models\Region::where('active', 1)->orderBy('sort', 'asc')->orderBy('country', 'asc')->get();
         return view('all-regions', compact('regions'));
     })->name('allRegions');
-    Route::get('/contact-us', [\App\Http\Controllers\ContactController::class, 'index'])->name('contactUs');
+    Route::get('/test-contact', function() { return view('test-contact'); });
+    Route::get('/contact-us', [HomeController::class, 'contact'])->name('contactUs');
     Route::post('/contact-us', [\App\Http\Controllers\ContactController::class, 'store'])->name('contactUs.store');
     Route::get('/coupons', [HomeController::class, 'categories'])->name('categories');
     Route::get('/coupons/{category}', [HomeController::class, 'categoryDetail'])->name('category.detail');
     Route::get('/stores', [HomeController::class, 'stores'])->name('stores');
     Route::get('/stores/{store}', [HomeController::class, 'storeDetail'])->name('store.detail');
     Route::get('/blogs', [HomeController::class, 'blogs'])->name('blogs');
-    Route::get('/blog/{slug}', [HomeController::class, 'blogDetail'])->name('blog.detail');
+    Route::get('/blogs/{slug}', [HomeController::class, 'blogDetail'])->name('blog.detail');
     // Route::get('terms-and-conditions',[HomeController::class,'terms'])->name('terms');
-    
-    // Pages
-    Route::get('/page/{slug}', [PageController::class, 'show'])->name('page.show');
-    Route::get('/pages', [PageController::class, 'index'])->name('pages.index');
+    Route::get('/search-suggestions', [HomeController::class, 'searchSuggestions'])->name('search.suggestions');
+
 });
 
 // Prefixed routes for other regions
@@ -95,7 +98,7 @@ Route::group([
 ], function () {
     Route::get('/', [HomeController::class, 'index'])->name('region.home');
     Route::get('/about-us', [HomeController::class, 'aboutUs'])->name('region.aboutUs');
-    
+
     Route::get('/privacy-policy', [HomeController::class, 'privacy'])->name('region.privacyPolicy');
     Route::get('/affiliate-disclaimer', [HomeController::class, 'affiliate'])->name('region.affiliateDisclaimer');
     Route::get('/imprint', [HomeController::class, 'imprint'])->name('region.imprint');
@@ -104,19 +107,16 @@ Route::group([
         $regions = \App\Models\Region::where('active', 1)->orderBy('sort', 'asc')->orderBy('country', 'asc')->get();
         return view('all-regions', compact('regions'));
     })->name('region.allRegions');
-    Route::get('/contact-us', [\App\Http\Controllers\ContactController::class, 'index'])->name('region.contactUs');
+    Route::get('/contact-us', [HomeController::class, 'contact'])->name('region.contactUs');
     Route::post('/contact-us', [\App\Http\Controllers\ContactController::class, 'store'])->name('region.contactUs.store');
     Route::get('/coupons', [HomeController::class, 'categories'])->name('region.categories');
     Route::get('/coupons/{category}', [HomeController::class, 'categoryDetail'])->name('region.category.detail');
     Route::get('/stores', [HomeController::class, 'stores'])->name('region.stores');
     Route::get('/stores/{store}', [HomeController::class, 'storeDetail'])->name('region.store.detail');
     Route::get('/blogs', [HomeController::class, 'blogs'])->name('region.blogs');
-    Route::get('/blog/{slug}', [HomeController::class, 'blogDetail'])->name('region.blog.detail');
-    // Route::get('terms-and-conditions',[HomeController::class,'terms'])->name('region.terms');
-    
-    // Region pages
-    Route::get('/page/{slug}', [PageController::class, 'show'])->name('region.page.show');
-    Route::get('/pages', [PageController::class, 'index'])->name('region.pages.index');
+    Route::get('/blogs/{slug}', [HomeController::class, 'blogDetail'])->name('region.blog.detail');
+    Route::get('/search-suggestions', [HomeController::class, 'searchSuggestions'])->name('region.search.suggestions');
+
 });
 
 
@@ -132,7 +132,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'isAdmin']], functio
     Route::get('/settings', [AdminController::class, 'settings'])->name('admin.settings');
 
     // Route::get('/crud-generator', [Hamdan\CrudGenerator\Controllers\ProcessController::class, 'getGenerator'])->name('generator'); // Disabled - package not installed
-    
+
     // Config
     Route::group(['prefix' => 'config'], function () {
         Route::get('favicon', [ConfigController::class, 'favicon'])->name('admin.config.favicon');
@@ -144,30 +144,11 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'isAdmin']], functio
         Route::post('option/update', [ConfigController::class, 'configOptionUpdate'])->name('admin.config.option.update');
     });
 
-    // Section Create - for main admin
-    Route::post('section-create', [PageController::class, 'sectionCreate'])->name('section.create');
-
     //Inquiry
     Route::get('inquiry', [InquiryController::class, 'index'])->name('inquiry.index');
     Route::get('inquiry-detail/{id}', [InquiryController::class, 'detail'])->name('inquiry.detail');
 
-    // Banner
-    Route::resource('banner', BannerController::class);
-
-    // Page - for main admin users (admin group)
-    Route::resource('page', \App\Http\Controllers\Admin\PageController::class)->names([
-        'index' => 'admin.page.index',
-        'create' => 'admin.page.create',
-        'store' => 'admin.page.store',
-        'show' => 'admin.page.show',  // Different name from public 'page.show'
-        'edit' => 'admin.page.edit',
-        'update' => 'admin.page.update',
-        'destroy' => 'admin.page.destroy'
-    ]);
-
-    // Section Create - for main admin
-    Route::post('section-create', [PageController::class, 'sectionCreate'])->name('section.create');
-
+    
     //Order
     Route::resource('order', OrderController::class);
     Route::get('order-detail/{id}', [OrderController::class,'orderDetail'])->name('order_detail');
@@ -222,7 +203,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'isRegionUser']], fu
     //     'update' => 'admin.store.update',
     //     'destroy' => 'admin.store.destroy'
     // ]);
-    
+
     Route::resource('stores', StoreController::class)->names([
     'index' => 'admin.stores.index',
     'create' => 'admin.stores.create',
@@ -232,7 +213,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'isRegionUser']], fu
     'update' => 'admin.stores.update',
     'destroy' => 'admin.stores.destroy'
 ]);
-    
+
     // Store FAQs
     Route::post('store/{store}/faqs', [StoreController::class, 'storeFaq'])->name('admin.store.faq.store');
     Route::put('store/{store}/faqs/{faq}', [StoreController::class, 'updateFaq'])->name('admin.store.faq.update');
@@ -248,8 +229,10 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'isRegionUser']], fu
         'update' => 'admin.offer.update',
         'destroy' => 'admin.offer.destroy'
     ]);
+    Route::post('offer/update-single-sort', [OfferController::class, 'updateSingleSort'])->name('admin.offer.update-single-sort');
 
     // Blog
+    Route::get('blog/search', [\App\Http\Controllers\Admin\BlogController::class, 'search'])->name('admin.blog.search');
     Route::resource('blog', \App\Http\Controllers\Admin\BlogController::class)->names([
         'index' => 'admin.blog.index',
         'create' => 'admin.blog.create',
@@ -260,28 +243,49 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'isRegionUser']], fu
         'destroy' => 'admin.blog.destroy'
     ]);
 
-
-    
-    // Page routes for region users (with different URL path to avoid conflicts) - using same controller
-    Route::resource('region-pages', \App\Http\Controllers\Admin\PageController::class)->names([
-        'index' => 'admin.region.page.index',
-        'create' => 'admin.region.page.create',
-        'store' => 'admin.region.page.store',
-        'show' => 'admin.region.page.show',
-        'edit' => 'admin.region.page.edit',
-        'update' => 'admin.region.page.update',
-        'destroy' => 'admin.region.page.destroy'
+    // Page
+    Route::resource('page', \App\Http\Controllers\Admin\PageController::class)->names([
+        'index' => 'admin.page.index',
+        'create' => 'admin.page.create',
+        'store' => 'admin.page.store',
+        'show' => 'admin.page.show',
+        'edit' => 'admin.page.edit',
+        'update' => 'admin.page.update',
+        'destroy' => 'admin.page.destroy'
     ]);
-    
+
+    Route::resource('social-app', \App\Http\Controllers\Admin\SocialAppController::class)->names([
+        'index' => 'admin.social-app.index',
+        'create' => 'admin.social-app.create',
+        'store' => 'admin.social-app.store',
+        'show' => 'admin.social-app.show',
+        'edit' => 'admin.social-app.edit',
+        'update' => 'admin.social-app.update',
+        'destroy' => 'admin.social-app.destroy'
+    ]);
+
+    Route::resource('head-tag', \App\Http\Controllers\Admin\HeadTagController::class);
+
+    // Banner
+    Route::resource('banner', \App\Http\Controllers\Admin\BannerController::class)->names([
+        'index' => 'admin.banner.index',
+        'create' => 'admin.banner.create',
+        'store' => 'admin.banner.store',
+        'show' => 'admin.banner.show',
+        'edit' => 'admin.banner.edit',
+        'update' => 'admin.banner.update',
+        'destroy' => 'admin.banner.destroy'
+    ]);
+
     // Section Create - for region users
-    Route::post('section-create', [PageController::class, 'sectionCreate'])->name('admin.section.create');
 
     // Region Dashboard
     Route::get('/region-dashboard', [RegionDashboardController::class, 'index'])->name('admin.region.dashboard');
-    
+
     // Trending Items Management for region users
     Route::get('/trending-items', [RegionDashboardController::class, 'trendingForm'])->name('admin.region.dashboard.trending.form');
     Route::post('/trending-items', [RegionDashboardController::class, 'saveTrending'])->name('admin.region.dashboard.trending.save');
+    Route::get('/trending-items/store-offers', [RegionDashboardController::class, 'getStoreOffers'])->name('admin.region.dashboard.trending.store-offers');
 });
 
 Route::group(['prefix' => 'user', 'as' => 'user.', 'middleware' =>  ['auth', 'isUser']], function () {

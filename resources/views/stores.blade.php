@@ -4,34 +4,8 @@
     $currentRegion = $regionService->getCurrentRegion();
 
     $regionCode = strtolower($currentRegion->code ?? 'us');
-    $regionName = $currentRegion->country ?? 'USA';
-
-    // DYNAMIC META CONTENT FOR STORES PAGE
-    $storeTitle = "Explore All Stores & Top Brands in $regionName";
-
-    $storeDesc = "Explore amazing deals and promo codes from top $regionName brands! Shop fashion, electronics, home essentials, beauty, and more, and save big on every purchase!";
-@endphp
-
-@push('schemas')
-<title>{{ $storeTitle }}</title>
-
-<meta name="description" content="{{ $storeDesc }}">
-<meta name="keywords" content="All Stores & Top Brands">
-<meta name="robots" content="index, follow">
-
-<meta property="og:url" content="{{ url()->current() }}">
-<meta property="og:title" content="{{ $storeTitle }}">
-<meta property="og:description" content="{{ $storeDesc }}">
-<meta property="og:image" content="https://pocketthrift.com/images/og-image.webp">
-
-<meta property="twitter:card" content="summary_large_image">
-<meta property="twitter:domain" content="pocketthrift.com">
-<meta property="twitter:url" content="{{ url()->current() }}">
-<meta property="twitter:title" content="{{ $storeTitle }}">
-<meta property="twitter:description" content="{{ $storeDesc }}">
-<meta property="twitter:image" content="https://pocketthrift.com/images/og-image.webp">
-
-@php
+    $regionName = $currentRegion->country ?? 'United States';
+    
     // Get region code from multiple sources
     $regionCode = $region->code ?? ($regionCode ?? null);
     
@@ -49,7 +23,7 @@
     
     // Define region names mapping
     $regions = [
-        'us' => 'USA', 
+        'us' => 'United States', 
         'uk' => 'United Kingdom', 
         'au' => 'Australia',
         'ca' => 'Canada', 
@@ -70,6 +44,10 @@
     ];
     
     $regionName = $regions[$regionCode] ?? strtoupper($regionCode);
+
+    // DYNAMIC META CONTENT FOR STORES PAGE
+    $storeTitle = __('Explore All Stores & Top Brands in :region', ['region' => $regionName]);
+    $storeDesc = __('Explore amazing deals and promo codes from top :region brands! Shop fashion, electronics, home essentials, beauty, and more, and save big on every purchase!', ['region' => $regionName]);
     $baseUrl = rtrim(config('app.url','https://pocketthrift.com'), '/');
     
     // SITE URL ALWAYS REGIONIZED
@@ -84,7 +62,7 @@
     
     // If title is still empty, use default with region name
     if (empty($title)) {
-        $title = "Explore All Stores & Top Brands in the $regionName";
+        $title = __('Explore All Stores & Top Brands in :region', ['region' => $regionName]);
     }
     
     // Replace region placeholders in title
@@ -95,11 +73,11 @@
     
     // If description is empty, use default with region name
     if (empty($description)) {
-        $description = "Explore amazing deals and promo codes from top $regionName brands! Shop fashion, electronics, home essentials, beauty, and more, and save big on every purchase!";
+        $description = __('Explore amazing deals and promo codes from top :region brands! Shop fashion, electronics, home essentials, beauty, and more, and save big on every purchase!', ['region' => $regionName]);
     }
     
     // Replace region placeholders in description
-    $description = str_replace(['$regionName', '$regionCode'], [$regionName, $regionCode], $description);
+    $description = str_replace(['$regionName', '$regionCode', ':region'], [$regionName, $regionCode, $regionName], $description);
     
     $path = $meta['path'] ?? request()->getPathInfo();
     
@@ -119,8 +97,8 @@
     
     // INITIALIZE BREADCRUMBS
     $breadcrumbs = $meta['breadcrumbs'] ?? [
-        ['name'=>'Home', 'url'=>$siteUrl],
-        ['name'=>'Stores', 'url'=>$pathWithoutRegion]
+        ['name'=>__('Home'), 'url'=>$siteUrl],
+        ['name'=>__('Stores'), 'url'=>$pathWithoutRegion]
     ];
     
     // 🔥 FIX: FORCE HOME URL TO INCLUDE REGION
@@ -128,18 +106,36 @@
         $breadcrumbs[0]['url'] = $siteUrl;
     } else {
         $breadcrumbs = [
-            ['name'=>'Home','url'=>$siteUrl],
-            ['name'=>'Stores','url'=>$pathWithoutRegion]
+            ['name'=>__('Home'),'url'=>$siteUrl],
+            ['name'=>__('Stores'),'url'=>$pathWithoutRegion]
         ];
     }
 @endphp
+
+@push('schemas')
+@section('title', $title)
+@section('meta_description', $description)
+<meta name="keywords" content="All Stores & Top Brands">
+<meta name="robots" content="index, follow">
+
+<meta property="og:url" content="{{ url()->current() }}">
+<meta property="og:title" content="{{ $title }}">
+<meta property="og:description" content="{{ $description }}">
+<meta property="og:image" content="https://pocketthrift.com/images/og-image.webp">
+
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:domain" content="pocketthrift.com">
+<meta property="twitter:url" content="{{ url()->current() }}">
+<meta property="twitter:title" content="{{ $title }}">
+<meta property="twitter:description" content="{{ $description }}">
+<meta property="twitter:image" content="https://pocketthrift.com/images/og-image.webp">
 
 @php
     $webpage = [
         "@context"=>"https://schema.org/",
         "@type"=>"WebPage",
-        "name"=>$title,
-        "description"=>$description,
+        "name"=>str_replace('United States', 'USA', $title),
+        "description"=>str_replace('United States', 'USA', $description),
         "url"=>$fullUrl,
         "publisher"=>[
             "@type"=>"Organization",
@@ -278,9 +274,9 @@
     <div class="container">
         <div class="row">
             <div class="col-12">
-                <h1 class="mb-4 text-dark">All Stores</h1>
-                <div class="secondary-heading">Verified On: October, 2025</div>
-                <p>Welcome to your ultimate savings hub! Here, you’ll find a fantastic multiple brands from across the USA, all ready to help you score amazing deals. Whether you’re hunting for stylish fashion, cutting-edge electronics, home essentials, or beauty must-haves, we’ve gathered the best promo codes, deals, and coupons just for you. Our mission is to make your shopping experience not only enjoyable but also budget-friendly.
+                <h1 class="mb-4 text-dark">{{ __('All Stores') }}</h1>
+                <div class="secondary-heading">{{ __('Verified On') }}: {{ __(date('F')) }}, {{ date('Y') }}</div>
+                <p>{{ __('Welcome to your ultimate savings hub! Here, you\'ll find a fantastic multiple brands from across the :region, all ready to help you score amazing deals. Whether you\'re hunting for stylish fashion, cutting-edge electronics, home essentials, or beauty must-haves, we\'ve gathered the best promo codes, deals, and coupons just for you. Our mission is to make your shopping experience not only enjoyable but also budget-friendly.', ['region' => $regionName]) }}
                 </p>
                 
             </div>
@@ -291,18 +287,12 @@
 <div class="category-cards">
   <div class="container">
     <div class="top-categories-widget pb-5">
-      <h2 class="mt-5 pb-3">Top Brands for Coupons and Deals in the 
-      @if(request()->route('region'))
-        {{ \App\Models\Region::where('code', request()->route('region'))->where('active', true)->first()->country ?? strtoupper(request()->route('region')) }}
-      @else
-        USA
-      @endif
-      </h2>
+      <h2 class="mt-5 pb-3">{{ __('Top Brands for Coupons and Deals in the :region', ['region' => $regionName]) }}
 
       <!-- Alphabet Filter & Search -->
       <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
         <div class="alphabet-filter d-flex flex-wrap align-items-center flex-grow-1">
-          <button class="btn btn-sm btn-primary me-2 active" data-letter="all">All</button>
+          <button class="btn btn-sm btn-primary me-2 active" data-letter="all">{{ __('All') }}</button>
           <script>
             document.write(
               Array.from("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -315,7 +305,7 @@
         <!-- Search Bar -->
         <div class="search-bar ms-auto" style="min-width: 150px;">
           <div class="input-group input-group-sm">
-            <input type="text" id="searchInput" class="form-control" placeholder="Search by Stores name">
+            <input type="text" id="searchInput" class="form-control" placeholder="{{ __('Search by Stores name') }}">
             <span class="input-group-text"><i class="bi bi-search"></i></span>
           </div>
         </div>
@@ -325,18 +315,10 @@
       <div class="row g-3" id="storeContainer">
         @forelse($stores as $store)
         <div class="col-6 col-md-4 col-lg-2-4 store-item" data-name="{{ $store->title }}">
-            <a href="{{ route('store.detail', ltrim($store->url_slug, '/')) }}" class="text-decoration-none">
+            <a href="{{ ($regionCode === 'us' || !$regionCode) ? route('store.detail', ltrim($store->url_slug, '/')) : route('region.store.detail', ['region' => $regionCode, 'store' => ltrim($store->url_slug, '/')]) }}" class="text-decoration-none">
             <div class="store-card text-left p-3">
-              <img src="{{ $store->logo ? asset('uploads/' . $store->logo) : asset('uploads/default-store.png') }}" alt="{{ $store->title }}" class="store-logo mb-2" onerror="this.onerror=null; this.src='{{ asset('uploads/default-store.png') }}';">
+              <img src="{{ $store->logo ? asset('uploads/' . $store->logo) : asset('uploads/default-store.png') }}" alt="{{ $store->title }}" class="store-logo mb-2" onerror="this.onerror=null; this.src='{{ asset($store->logo) }}';">
               <h6 class="store-name">{{ $store->title }}</h6>
-              <hr class="my-2">
-              <p class="store-meta mb-0">
-                @php
-                  $affiliateLinks = $store->affiliate_links ? json_decode($store->affiliate_links, true) : null;
-                  $couponCount = is_array($affiliateLinks) ? count($affiliateLinks) : 0;
-                @endphp
-                {{ $couponCount }} Coupons <span class="mx-2">|</span> {{ rand(1, 15) }} Offers
-              </p>
             </div>
           </a>
         </div>
@@ -429,13 +411,13 @@
             <div class="container py-3">
                 <ul class="list-unstyled d-flex align-items-center gap-2 mb-0">
                     <li class="d-flex align-items-center">
-                        <a href="{{ route('home') }}" class="text-decoration-none">Home</a>
+                        <a href="{{ ($regionCode === 'us' || !$regionCode) ? route('home') : route('region.home', ['region' => $regionCode]) }}" class="text-decoration-none">{{ __('Home') }}</a>
                         <svg fill="rgba(0,0,0,1)" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg">
                             <path d="M13.1717 12.0007L8.22192 7.05093L9.63614 5.63672L16.0001 12.0007L9.63614 18.3646L8.22192 16.9504L13.1717 12.0007Z"></path>
                         </svg>
                     </li>
                     <li class="d-flex align-items-center">
-                        <span class="fw-semibold">Stores</span>
+                        <span class="fw-semibold">{{ __('Stores') }}</span>
                     </li>
                 </ul>
             </div>

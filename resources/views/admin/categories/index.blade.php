@@ -21,7 +21,7 @@
                             <form method="GET" action="{{ route('admin.category.index') }}">
                                 <div class="row">
                                     <div class="col-md-2">
-                                        <input type="text" name="search" class="form-control" placeholder="Search categories..." value="{{ request('search') }}">
+                                        <input type="text" name="search" class="form-control" placeholder="{{ __('Search categories...') }}" value="{{ request('search') }}">
                                     </div>
                                     <div class="col-md-2">
                                         <select name="active" class="form-control">
@@ -111,10 +111,10 @@
                                         <td>
                                             <a href="{{ route('admin.category.show', $category->id) }}" class="btn btn-sm btn-info">View</a>
                                             <a href="{{ route('admin.category.edit', $category->id) }}" class="btn btn-sm btn-primary">Edit</a>
-                                            <form action="{{ route('admin.category.destroy', $category->id) }}" method="POST" class="d-inline">
+                                            <form action="{{ route('admin.category.destroy', $category->id) }}" method="POST" class="d-inline" id="delete-form-{{ $category->id }}">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this category?')">Delete</button>
+                                                <button type="button" class="btn btn-sm btn-danger" onclick="deleteCategory({{ $category->id }})">Delete</button>
                                             </form>
                                         </td>
                                     </tr>
@@ -136,3 +136,24 @@
     </div>
 </div>
 @endsection
+
+@push('js')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  function deleteCategory(id) {
+      Swal.fire({
+          title: 'Are you sure?',
+          text: "You won't be able to revert this!",
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'Yes, delete it!'
+      }).then((result) => {
+          if (result.isConfirmed) {
+              document.getElementById('delete-form-' + id).submit();
+          }
+      })
+  }
+</script>
+@endpush

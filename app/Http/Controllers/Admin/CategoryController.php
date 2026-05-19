@@ -115,18 +115,18 @@ class CategoryController extends Controller
             'title_eng' => 'nullable|string|max:255',
             'url_slug' => 'required|string|max:255|unique:categories,url_slug',
             'seo_title' => 'nullable|string|max:255',
-            'seo_meta_keyword' => 'nullable|string',
-            'meta_description' => 'nullable|string',
+            'seo_meta_keyword' => 'nullable|string|max:255',
+            'meta_description' => 'nullable|string|max:255',
             'title_h1' => 'nullable|string|max:255',
             'subtitle_h2' => 'nullable|string|max:255',
             'content_body' => 'nullable|string',
-            'logo' => 'nullable|string',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'image_alt' => 'nullable|string|max:255',
             'image_title' => 'nullable|string|max:255',
             'meta_robots' => 'nullable|string|max:255',
             'country_codes' => 'nullable|array',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
+            // 'start_date' => 'nullable|date',
+            // 'end_date' => 'nullable|date|after_or_equal:start_date',
             'is_seasonal' => 'boolean',
             'active' => 'boolean',
             'sort' => 'required|integer',
@@ -165,12 +165,28 @@ class CategoryController extends Controller
             $category->country_codes = $user->assigned_regions;
         }
         
-        $category->start_date = $request->start_date;
-        $category->end_date = $request->end_date;
+        // $category->start_date = $request->start_date;
+        // $category->end_date = $request->end_date;
         $category->is_seasonal = $request->has('is_seasonal') ? 1 : 0;
         $category->active = $request->has('active') ? 1 : 0;
         $category->sort = $request->sort ?? 0;
         $category->updated_by = Auth::id();
+
+        // Handle logo upload if provided
+        if ($request->hasFile('logo')) {
+            // File object
+            $file = $request->file('logo');
+
+            // Unique filename
+            $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+            // Path inside public folder - using same directory as stores
+            $file->move(public_path('uploads/store_icons'), $fileName);
+
+            // Save in DB - path relative to uploads folder, using same directory as stores
+            $category->logo = 'store_icons/' . $fileName;
+        }
+
         $category->save();
 
         return redirect()->route('admin.category.index')->with('success', 'Category created successfully.');
@@ -188,9 +204,9 @@ class CategoryController extends Controller
         
         // Get the regions based on the stored country codes (comma-separated codes)
         $assignedRegions = collect();
-        if (!empty($category->country_codes)) {
-            $regionCodes = explode(',', $category->country_codes);
-            $assignedRegions = Region::whereIn('code', $regionCodes)->get();
+        $regionCodes = $category->country_codes; // Already an array from accessor
+        if (!empty($regionCodes)) {
+            $assignedRegions = Region::whereIn('code', is_array($regionCodes) ? $regionCodes : explode(',', $regionCodes))->get();
         }
         
         return view('admin.categories.show', compact('category', 'assignedRegions'));
@@ -211,11 +227,20 @@ class CategoryController extends Controller
         if (!$isAdmin) {
             // Region-wise users can only edit categories in their assigned region
             $userRegionCode = $user->assigned_regions;
-            $categoryRegionCodes = $category->getOriginal('country_codes');
+            $categoryRegionCodes = $category->country_codes; // This will be an array because of the accessor
             
-            if ($categoryRegionCodes && strpos($categoryRegionCodes, $userRegionCode) === false) {
-                // User doesn't have permission to edit this category
-                return redirect()->route('admin.category.index')->with('error', 'You do not have permission to edit this category.');
+            if (!empty($categoryRegionCodes)) {
+                // If it's an array (from accessor), use in_array
+                if (is_array($categoryRegionCodes)) {
+                    if (!in_array($userRegionCode, $categoryRegionCodes)) {
+                        return redirect()->route('admin.category.index')->with('error', 'You do not have permission to edit this category.');
+                    }
+                } else {
+                    // If it's somehow a string, use strpos
+                    if (strpos($categoryRegionCodes, $userRegionCode) === false) {
+                        return redirect()->route('admin.category.index')->with('error', 'You do not have permission to edit this category.');
+                    }
+                }
             }
         }
         
@@ -230,12 +255,11 @@ class CategoryController extends Controller
             }
         }
         
-        // Split the comma-separated country codes back to an array of region IDs
+        // Get region IDs from the codes provided (country_codes is already an array from accessor)
+        $regionCodes = $category->country_codes;
         $selectedRegions = [];
-        if ($category->getOriginal('country_codes')) {
-            // Get region IDs from the codes provided
-            $regionCodes = explode(',', $category->getOriginal('country_codes'));
-            $selectedRegions = Region::whereIn('code', $regionCodes)->pluck('id')->toArray();
+        if (!empty($regionCodes)) {
+            $selectedRegions = Region::whereIn('code', is_array($regionCodes) ? $regionCodes : explode(',', $regionCodes))->pluck('id')->toArray();
         }
         
         $users = User::all();
@@ -257,18 +281,18 @@ class CategoryController extends Controller
             'title_eng' => 'nullable|string|max:255',
             'url_slug' => 'required|string|max:255|unique:categories,url_slug,'.$category->id,
             'seo_title' => 'nullable|string|max:255',
-            'seo_meta_keyword' => 'nullable|string',
-            'meta_description' => 'nullable|string',
+            'seo_meta_keyword' => 'nullable|string|max:255',
+            'meta_description' => 'nullable|string|max:255',
             'title_h1' => 'nullable|string|max:255',
             'subtitle_h2' => 'nullable|string|max:255',
             'content_body' => 'nullable|string',
-            'logo' => 'nullable|string',
+            'logo' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
             'image_alt' => 'nullable|string|max:255',
             'image_title' => 'nullable|string|max:255',
             'meta_robots' => 'nullable|string|max:255',
             'country_codes' => 'nullable|array',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
+            // 'start_date' => 'nullable|date',
+            // 'end_date' => 'nullable|date|after_or_equal:start_date',
             'is_seasonal' => 'boolean',
             'active' => 'boolean',
             'sort' => 'required|integer',
@@ -306,12 +330,28 @@ class CategoryController extends Controller
             $category->country_codes = $user->assigned_regions;
         }
         
-        $category->start_date = $request->start_date;
-        $category->end_date = $request->end_date;
+        // $category->start_date = $request->start_date;
+        // $category->end_date = $request->end_date;
         $category->is_seasonal = $request->has('is_seasonal') ? 1 : 0;
         $category->active = $request->has('active') ? 1 : 0;
         $category->sort = $request->sort ?? 0;
         $category->updated_by = Auth::id();
+
+        // Handle logo upload if provided
+        if ($request->hasFile('logo')) {
+            // File object
+            $file = $request->file('logo');
+
+            // Unique filename
+            $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+            // Path inside public folder - using same directory as stores
+            $file->move(public_path('uploads/store_icons'), $fileName);
+
+            // Save in DB - path relative to uploads folder, using same directory as stores
+            $category->logo = 'store_icons/' . $fileName;
+        }
+
         $category->save();
 
         return redirect()->route('admin.category.index')->with('success', 'Category updated successfully.');
@@ -325,9 +365,8 @@ class CategoryController extends Controller
      */
     public function destroy(Category $category)
     {
-        $category->deleted_by = Auth::id();
-        $category->save();
-        $category->delete();
+        // Permanently delete the category from the database
+        $category->forceDelete();
 
         return redirect()->route('admin.category.index')->with('success', 'Category deleted successfully.');
     }

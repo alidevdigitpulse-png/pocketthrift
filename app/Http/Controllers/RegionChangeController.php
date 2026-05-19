@@ -15,7 +15,7 @@ class RegionChangeController extends Controller
         $this->regionService = $regionService;
     }
 
-    public function changeRegion($regionCode)
+    public function changeRegion($regionCode, Request $request)
     {
         // Validate that the region code exists
         $region = \App\Models\Region::where('code', $regionCode)->where('active', true)->first();
@@ -27,13 +27,50 @@ class RegionChangeController extends Controller
         // Set the region in session
         $this->regionService->setCurrentRegion($regionCode);
         
-        // Calculate the redirect path based on the selected region
+        // Map region codes to locale codes (same as in RegionMiddleware)
+        $localeMap = [
+            'us' => 'en-US',
+            'uk' => 'en-GB',
+            'au' => 'en-AU',
+            'ca' => 'en-CA',
+            'fr' => 'fr-FR',
+            'de' => 'de-DE',
+            'it' => 'it-IT',
+            'nl' => 'nl-NL',
+            'pl' => 'pl-PL',
+            'es' => 'es-ES',
+            'mx' => 'es-MX',
+            'ch' => 'de-CH',
+            'lu' => 'lb-LU',
+            'fi' => 'fi-FI',
+            'no' => 'no-NO',
+            'nz' => 'en-NZ',
+            'sg' => 'en-SG',
+            'at' => 'de-AT',
+        ];
+        
+        // Set the locale immediately in the session
+        $locale = $localeMap[$regionCode] ?? 'en-US';
+        Session::put('locale', $locale);
+        \App::setLocale($locale);
+
+        // Always redirect to the homepage of the selected region
         if ($regionCode === 'us') {
-            // For US, redirect to the base URL without any region prefix
-            return redirect('/');
+            $redirectUrl = url('/');
         } else {
-            // For other regions, redirect to the region-prefixed root
-            return redirect('/' . $regionCode . '/');
+            $redirectUrl = url('/' . $regionCode);
         }
+        
+        // Make sure no trailing slash is randomly added
+        $redirectUrl = rtrim($redirectUrl, '/');
+        if (empty($redirectUrl)) {
+            $redirectUrl = url('/');
+        }
+        
+        return redirect()->to($redirectUrl)->withHeaders([
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0'
+        ]);
     }
 }

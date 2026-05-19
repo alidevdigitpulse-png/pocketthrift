@@ -74,7 +74,7 @@
                                 </tr>
                                 <tr>
                                     <th>Logo</th>
-                                    <td>{{ $category->logo ?? 'N/A' }}</td>
+                                    <td><img src="{{ asset( substr($category->logo, 0, 8) === 'uploads/' ? $category->logo : 'uploads/' . $category->logo ) }}" alt="{{ $category->title }}"></td>
                                 </tr>
                                 <tr>
                                     <th>Image Alt Text</th>
@@ -87,14 +87,6 @@
                                 <tr>
                                     <th>Meta Robots</th>
                                     <td>{{ $category->meta_robots ?? 'N/A' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Start Date</th>
-                                    <td>{{ $category->start_date ? $category->start_date->format('Y-m-d') : 'N/A' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>End Date</th>
-                                    <td>{{ $category->end_date ? $category->end_date->format('Y-m-d') : 'N/A' }}</td>
                                 </tr>
                                 <tr>
                                     <th>Sort Order</th>

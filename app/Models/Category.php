@@ -35,16 +35,29 @@ class Category extends Model
     ];
 
     protected $casts = [
-        'country_codes' => 'array', // This handles JSON to array conversion
-        'is_seasonal' => 'boolean',
-        'active' => 'boolean',
-        'sort' => 'integer',
         'start_date' => 'date',
         'end_date' => 'date',
-        'updated_by' => 'integer',
-        'deleted_by' => 'integer',
         'deleted_at' => 'datetime',
     ];
+
+    public function getCountryCodesAttribute($value)
+    {
+        // Convert comma-separated values to array when accessed
+        if ($value) {
+            return explode(',', $value);
+        }
+        return [];
+    }
+
+    public function setCountryCodesAttribute($value)
+    {
+        // Convert array to comma-separated string when setting
+        if (is_array($value)) {
+            $this->attributes['country_codes'] = implode(',', $value);
+        } else {
+            $this->attributes['country_codes'] = $value;
+        }
+    }
 
     public function getCountryCodeListAttribute()
     {
@@ -97,9 +110,12 @@ class Category extends Model
             // Also support legacy comma-separated storage (FIND_IN_SET)
             $q->orWhere(function($sub) use ($regionCodes) {
                 foreach ($regionCodes as $code) {
-                    $sub->orWhereRaw("FIND_IN_SET(?, country_codes)", [$code])
+                    $sub->orWhereRaw("FIND_IN_SET(?, REPLACE(country_codes, ' ', '')) > 0", [$code])
                         ->orWhere('country_codes', 'LIKE', '%"' . $code . '"%')
-                        ->orWhere('country_codes', 'LIKE', '%'.$code.'%');
+                        ->orWhere('country_codes', $code) // Exact match
+                        ->orWhere('country_codes', 'LIKE', $code . ',%') // Start
+                        ->orWhere('country_codes', 'LIKE', '%,' . $code) // End
+                        ->orWhere('country_codes', 'LIKE', '%,' . $code . ',%'); // Middle
                 }
             });
         });

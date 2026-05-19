@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Page;
+use Illuminate\Support\Str;
 
 use App\Models\Region;
 use App\Services\RegionService;
@@ -41,83 +42,136 @@ class HomeController extends Controller
             $trendingStoreItems = \App\Models\TrendingItem::byRegionAndType($regionId, 'store')
                 ->with('item.category') // Eager load item and its category relationship
                 ->orderBy('position', 'asc')
-                ->take(5) // Limit to 5 trending items
+                ->take(12) // Limit to 12 trending items
                 ->get();
 
             $trendingStores = collect();
             foreach ($trendingStoreItems as $trendingItem) {
                 $item = $trendingItem->item;
-                if ($item && $item->active && $trendingStores->count() < 5) {
+                if ($item && $item->active && $trendingStores->count() < 12) {
                     $trendingStores->push($item);
                 }
             }
-            $trendingStores = $trendingStores->unique('id')->take(5);
+            $trendingStores = $trendingStores->unique('id')->take(12);
 
             // Get trending items for categories
             $trendingCategoryItems = \App\Models\TrendingItem::byRegionAndType($regionId, 'category')
                 ->with('item') // Eager load item
                 ->orderBy('position', 'asc')
-                ->take(5) // Limit to 5 trending items
+                ->take(6) // Limit to 6 trending items
                 ->get();
 
             $trendingCategories = collect();
             foreach ($trendingCategoryItems as $trendingItem) {
                 $item = $trendingItem->item;
-                if ($item && $item->active && $trendingCategories->count() < 5) {
+                if ($item && $item->active && $trendingCategories->count() < 6) {
                     $trendingCategories->push($item);
                 }
             }
 
-            // Get trending items for offers
-            $trendingOfferItems = \App\Models\TrendingItem::byRegionAndType($regionId, 'offer')
+            // Get trending items for offers - Row 1
+            $trendingOfferItemsRow1 = \App\Models\TrendingItem::byRegionAndType($regionId, 'offer')
+                ->where('row', 1)
                 ->with('item.store') // Eager load item and its store relationship
                 ->orderBy('position', 'asc')
-                ->take(10) // Limit to 10 trending items
+                ->take(9) // Limit to 9 trending items
                 ->get();
 
-            $trendingOffers = collect();
-            foreach ($trendingOfferItems as $trendingItem) {
+            $trendingOffersRow1 = collect();
+            foreach ($trendingOfferItemsRow1 as $trendingItem) {
                 $item = $trendingItem->item;
-                if ($item && $item->active && $trendingOffers->count() < 10) {
-                    $trendingOffers->push($item);
+                if ($item && $item->active && $item->store && $trendingOffersRow1->count() < 9) {
+                    $trendingOffersRow1->push($item);
                 }
             }
+            $trendingOffersRow1 = $trendingOffersRow1->unique('id')->take(9);
 
-            $trendingOffers = $trendingOffers->unique('id')->take(10);
+            // Get trending items for offers - Row 2
+            $trendingOfferItemsRow2 = \App\Models\TrendingItem::byRegionAndType($regionId, 'offer')
+                ->where('row', 2)
+                ->with('item.store') // Eager load item and its store relationship
+                ->orderBy('position', 'asc')
+                ->take(9) // Limit to 9 trending items
+                ->get();
+
+            $trendingOffersRow2 = collect();
+            foreach ($trendingOfferItemsRow2 as $trendingItem) {
+                $item = $trendingItem->item;
+                if ($item && $item->active && $item->store && $trendingOffersRow2->count() < 9) {
+                    $trendingOffersRow2->push($item);
+                }
+            }
+            $trendingOffersRow2 = $trendingOffersRow2->unique('id')->take(9);
+
+            // Get trending items for offers - Row 3
+            $trendingOfferItemsRow3 = \App\Models\TrendingItem::byRegionAndType($regionId, 'offer')
+                ->where('row', 3)
+                ->with('item.store') // Eager load item and its store relationship
+                ->orderBy('position', 'asc')
+                ->take(9) // Limit to 9 trending items
+                ->get();
+
+            $trendingOffersRow3 = collect();
+            foreach ($trendingOfferItemsRow3 as $trendingItem) {
+                $item = $trendingItem->item;
+                if ($item && $item->active && $item->store && $trendingOffersRow3->count() < 9) {
+                    $trendingOffersRow3->push($item);
+                }
+            }
+            $trendingOffersRow3 = $trendingOffersRow3->unique('id')->take(9);
+            
+            // Get trending items for blogs
+            $trendingBlogItems = \App\Models\TrendingItem::byRegionAndType($regionId, 'blog')
+                ->with('item.category') // Eager load item and its category relationship
+                ->orderBy('position', 'asc')
+                ->take(8) // Limit to 8 trending items
+                ->get();
+
+            $trendingBlogs = collect();
+            foreach ($trendingBlogItems as $trendingItem) {
+                $item = $trendingItem->item;
+                if ($item && $item->active && $trendingBlogs->count() < 8) {
+                    $trendingBlogs->push($item);
+                }
+            }
+            $trendingBlogs = $trendingBlogs->unique('id')->take(8);
 
             // If there are no manually selected trending items, fallback to algorithmic trending
-            if ($trendingStores->count() < 5) {
-                $needed = 5 - $trendingStores->count();
+            if ($trendingStores->count() < 12) {
+                $needed = 12 - $trendingStores->count();
                 $existingIds = $trendingStores->pluck('id')->all();
 
-                $trendingStores = \App\Models\Store::where('active', true)
+                $fallbackStores = \App\Models\Store::where('active', true)
                     ->byRegionCodes([$currentRegion])
                     ->whereNotIn('id', $existingIds)
                     ->orderBy('updated_at', 'desc')
                     ->take($needed)
                     ->get();
+                $trendingStores = $trendingStores->concat($fallbackStores);
             }
 
-            if ($trendingCategories->count() < 5) {
-                $needed = 5 - $trendingCategories->count();
+            if ($trendingCategories->count() < 6) {
+                $needed = 6 - $trendingCategories->count();
                 $existingIds = $trendingCategories->pluck('id')->all();
 
-                $trendingCategories = \App\Models\Category::where('active', true)
+                $fallbackCategories = \App\Models\Category::where('active', true)
                     ->byRegionCodes([$currentRegion])
                     ->whereNotIn('id', $existingIds)
                     ->orderBy('updated_at', 'desc')
                     ->take($needed)
                     ->get();
+                $trendingCategories = $trendingCategories->concat($fallbackCategories);
             }
 
-            // If we still don't have enough offers, supplement with algorithmic trending
-            if ($trendingOffers->count() < 10) {
-                $needed = 10 - $trendingOffers->count();
-                $existingIds = $trendingOffers->pluck('id')->all();
+            // Fallback for each row independently
+            if ($trendingOffersRow1->count() < 9) {
+                $needed = 9 - $trendingOffersRow1->count();
+                $existingIds = $trendingOffersRow1->pluck('id')->all();
 
                 $fallbackOffers = \App\Models\Offer::where('active', true)
+                    ->has('store')
                     ->byRegionCodes([$currentRegion])
-                    ->whereNotIn('id', $existingIds) // Exclude already added offers
+                    ->whereNotIn('id', $existingIds)
                     ->where(function ($query) {
                         $query->whereNull('end_date')
                             ->orWhere('end_date', '>=', now());
@@ -125,14 +179,67 @@ class HomeController extends Controller
                     ->orderBy('updated_at', 'desc')
                     ->take($needed)
                     ->get();
-                $trendingOffers = $trendingOffers->concat($fallbackOffers);
+                $trendingOffersRow1 = $trendingOffersRow1->concat($fallbackOffers);
             }
+
+            if ($trendingOffersRow2->count() < 9) {
+                $needed = 9 - $trendingOffersRow2->count();
+                $existingIds = $trendingOffersRow2->pluck('id')->all();
+
+                $fallbackOffers = \App\Models\Offer::where('active', true)
+                    ->has('store')
+                    ->byRegionCodes([$currentRegion])
+                    ->whereNotIn('id', $existingIds)
+                    ->where(function ($query) {
+                        $query->whereNull('end_date')
+                            ->orWhere('end_date', '>=', now());
+                    })
+                    ->orderBy('updated_at', 'desc')
+                    ->take($needed)
+                    ->get();
+                $trendingOffersRow2 = $trendingOffersRow2->concat($fallbackOffers);
+            }
+
+            if ($trendingOffersRow3->count() < 9) {
+                $needed = 9 - $trendingOffersRow3->count();
+                $existingIds = $trendingOffersRow3->pluck('id')->all();
+
+                $fallbackOffers = \App\Models\Offer::where('active', true)
+                    ->has('store')
+                    ->byRegionCodes([$currentRegion])
+                    ->whereNotIn('id', $existingIds)
+                    ->where(function ($query) {
+                        $query->whereNull('end_date')
+                            ->orWhere('end_date', '>=', now());
+                    })
+                    ->orderBy('updated_at', 'desc')
+                    ->take($needed)
+                    ->get();
+                $trendingOffersRow3 = $trendingOffersRow3->concat($fallbackOffers);
+            }
+
+            // Removed automatic fallback - only show manually selected blogs
+            // If we still don't have enough blogs, supplement with algorithmic trending
+            // if ($trendingBlogs->count() < 8) {
+            //     $needed = 8 - $trendingBlogs->count();
+            //     $existingIds = $trendingBlogs->pluck('id')->all();
+
+            //     $trendingBlogs = $trendingBlogs->concat(
+            //         \App\Models\Blog::with('category')
+            //             ->where('active', true)
+            //             ->byRegionCodes([$currentRegion])
+            //             ->whereNotIn('id', $existingIds)
+            //             ->orderBy('updated_at', 'desc')
+            //             ->take($needed)
+            //             ->get()
+            //     );
+            // }
         } else {
             // Fallback to algorithmic trending if region not found
             $trendingStores = \App\Models\Store::where('active', true)
                 ->byRegionCodes([$currentRegion])
                 ->orderBy('updated_at', 'desc')
-                ->take(5)
+                ->take(12)
                 ->get();
 
             $trendingCategories = \App\Models\Category::where('active', true)
@@ -141,32 +248,44 @@ class HomeController extends Controller
                 ->take(5)
                 ->get();
 
-            $trendingOffers = \App\Models\Offer::where('active', true)
+            // For fallback, use the same offers for all three rows
+            $fallbackOffers = \App\Models\Offer::where('active', true)
                 ->byRegionCodes([$currentRegion])
                 ->where(function ($query) {
                     $query->whereNull('end_date')
                         ->orWhere('end_date', '>=', now());
                 })
                 ->orderBy('updated_at', 'desc')
-                ->take(10)
+                ->take(9)
+                ->get();
+            
+            $trendingOffersRow1 = $fallbackOffers;
+            $trendingOffersRow2 = $fallbackOffers;
+            $trendingOffersRow3 = $fallbackOffers;
+            
+            $trendingBlogs = \App\Models\Blog::with('category')
+                ->where('active', true)
+                ->byRegionCodes([$currentRegion])
+                ->orderBy('updated_at', 'desc')
+                ->take(8)
                 ->get();
         }
 
-        return view('welcome', compact('trendingStores', 'trendingCategories', 'trendingOffers', 'currentRegion'));
+
+        // Fetch Banners for the current region
+        $banners = \App\Models\Banner::byRegionCodes([$currentRegion])->where('type', 'Hero Slider')->get();
+
+        $topBanner = \App\Models\Banner::byRegionCodes([$currentRegion])->where('type', 'Top Banner')->first();
+        $bottomBanner = \App\Models\Banner::byRegionCodes([$currentRegion])->where('type', 'Bottom Banner')->first();
+
+        return view('welcome', compact('trendingStores', 'trendingCategories', 'trendingOffersRow1', 'trendingOffersRow2', 'trendingOffersRow3', 'trendingBlogs', 'currentRegion', 'banners','topBanner', 'bottomBanner'));
     }
 
     public function categories(Request $request)
     {
         $currentRegion = $this->regionService->getCurrentRegionCode();
-
         $categories = Category::where('active', true)
-            ->where(function ($query) use ($currentRegion) {
-                $query->whereNull('country_codes')
-                    ->orWhere('country_codes', '[]')
-                    ->orWhere('country_codes', '')
-                    ->orWhereRaw("JSON_VALID(country_codes) AND JSON_CONTAINS(country_codes, ?)", [json_encode($currentRegion)])
-                    ->orWhereRaw("FIND_IN_SET(?, country_codes)", [$currentRegion]);
-            });
+            ->byRegionCodes([$currentRegion]);
 
         // Apply search filter if provided
         if ($request->has('search') && ! empty($request->search)) {
@@ -215,14 +334,15 @@ class HomeController extends Controller
         // Try matching with and without leading slash
         $slugWithSlash = '/' . ltrim($categorySlug, '/');
 
-        // Fetch the category by either ID or slug
-        $categoryRecord = \App\Models\Category::where('active', true)
-            ->where(function ($query) use ($categorySlug, $slugWithSlash) {
-                $query->where('id', $categorySlug)
-                    ->orWhere('url_slug', $categorySlug)
-                    ->orWhere('url_slug', $slugWithSlash);
-            })
-            ->first();
+        // Fetch the category by either ID or slug, filtered by region
+    $categoryRecord = \App\Models\Category::where('active', true)
+        ->byRegionCodes([$currentRegion]) // Filter by current region
+        ->where(function ($query) use ($categorySlug, $slugWithSlash) {
+            $query->where('id', $categorySlug)
+                ->orWhere('url_slug', $categorySlug)
+                ->orWhere('url_slug', $slugWithSlash);
+        })
+        ->first();
 
         if (! $categoryRecord) {
             abort(404, 'Category not found');
@@ -259,7 +379,34 @@ class HomeController extends Controller
             abort(404, 'Category not available in your region');
         }
 
-        return view('category-detail', compact('categoryRecord', 'currentRegion'));
+        // Fetch offers for stores in this category, filtered by region
+    $storeIds = $categoryRecord->stores()->pluck('id');
+
+    $offersQuery = \App\Models\Offer::whereIn('store_id', $storeIds)
+        ->where('active', true)
+        ->where(function ($query) use ($currentRegion) {
+            $query->whereNull('country_codes')
+                ->orWhere('country_codes', '[]')
+                ->orWhere('country_codes', '')
+                ->orWhere('country_codes', 'NULL') // Handle string "NULL" as available in all regions
+                ->orWhereRaw("TRIM(country_codes) = ?", [$currentRegion]) // Exact match with trimmed spaces
+                ->orWhereRaw("JSON_VALID(country_codes) AND JSON_CONTAINS(country_codes, ?)", [json_encode($currentRegion)])
+                ->orWhereRaw("FIND_IN_SET(?, REPLACE(TRIM(country_codes), ' ', '')) > 0", [$currentRegion])
+                ->orWhere('country_codes', 'LIKE', '%' . $currentRegion . '%'); // Fallback for any format
+        })
+        ->with('store')
+        ->orderBy('sort', 'asc');
+
+    
+    // Check all offers for these stores without region filter
+    $allOffersForStores = \App\Models\Offer::whereIn('store_id', $storeIds)
+        ->where('active', true)
+        ->select('id', 'title', 'store_id', 'country_codes')
+        ->get();
+    
+    $offers = $offersQuery->get();
+
+    return view('category-detail', compact('categoryRecord', 'currentRegion', 'offers'));
     }
 
     public function stores(Request $request)
@@ -286,19 +433,134 @@ class HomeController extends Controller
         return view('stores', compact('stores'));
     }
 
+    public function searchSuggestions(Request $request)
+    {
+        $term = $request->input('term');
+        $currentRegion = $this->regionService->getCurrentRegionCode();
+        $isUsRegion = $currentRegion === 'us';
+
+        if (empty($term)) {
+            return response()->json([]);
+        }
+
+        // Search Stores
+        $stores = \App\Models\Store::where('active', true)
+            ->byRegionCodes([$currentRegion])
+            ->where('title', 'LIKE', "%{$term}%")
+            ->orderBy('title')
+            ->limit(5)
+            ->get()
+            ->map(function ($store) use ($currentRegion, $isUsRegion) {
+                return [
+                    'label' => $store->title,
+                    'category' => 'Stores',
+                    'url' => $isUsRegion ? route('store.detail', ltrim($store->url_slug, '/')) : route('region.store.detail', ['region' => $currentRegion, 'store' => ltrim($store->url_slug, '/')])
+                ];
+            });
+
+        // Search Categories
+        $categories = Category::where('active', true)
+            ->byRegionCodes([$currentRegion])
+            ->where('title', 'LIKE', "%{$term}%")
+            ->orderBy('title')
+            ->limit(5)
+            ->get()
+            ->map(function ($category) use ($currentRegion, $isUsRegion) {
+                return [
+                    'label' => $category->title,
+                    'category' => 'Categories',
+                    'url' => $isUsRegion ? route('category.detail', ltrim($category->url_slug, '/')) : route('region.category.detail', ['region' => $currentRegion, 'category' => ltrim($category->url_slug, '/')])
+                ];
+            });
+
+        // Search Blogs
+        $blogs = \App\Models\Blog::where('active', true)
+            ->byRegionCodes([$currentRegion])
+            ->where('title', 'LIKE', "%{$term}%")
+            ->orderBy('title')
+            ->limit(5)
+            ->get()
+            ->map(function ($blog) use ($currentRegion, $isUsRegion) {
+                return [
+                    'label' => $blog->title,
+                    'category' => 'Blogs',
+                    'url' => $isUsRegion ? route('blog.detail', ltrim($blog->url_slug, '/')) : route('region.blog.detail', ['region' => $currentRegion, 'slug' => ltrim($blog->url_slug, '/')])
+                ];
+            });
+
+        // Search Offers
+        $offers = \App\Models\Offer::where('active', true)
+             ->byRegionCodes([$currentRegion])
+             ->where('title', 'LIKE', "%{$term}%")
+             ->with('store')
+             ->orderBy('title')
+             ->limit(5)
+             ->get()
+             ->map(function ($offer) use ($currentRegion, $isUsRegion) {
+                 $url = '#';
+                 if ($offer->store) {
+                     $url = $isUsRegion 
+                        ? route('store.detail', ltrim($offer->store->url_slug, '/')) 
+                        : route('region.store.detail', ['region' => $currentRegion, 'store' => ltrim($offer->store->url_slug, '/')]);
+                 }
+                 return [
+                     'label' => $offer->title,
+                     'category' => 'Offers',
+                     'url' => $url
+                 ];
+             });
+
+        // Search Details Pages (About, Contact, etc.)
+        $pages = \App\Models\Page::where('active', true)
+            ->byRegionCodes([$currentRegion])
+            ->where('title', 'LIKE', "%{$term}%")
+            ->orderBy('title')
+            ->limit(5)
+            ->get()
+            ->map(function ($page) use ($currentRegion, $isUsRegion) {
+                 // Determine route based on slug
+                 $slug = trim($page->url_slug, '/');
+                 $url = '#';
+                 
+                 // Map common pages to their named routes
+                 if (Str::contains($slug, 'about')) {
+                    $url = $isUsRegion ? route('aboutUs') : route('region.aboutUs', $currentRegion);
+                 } elseif (Str::contains($slug, 'contact')) {
+                    $url = $isUsRegion ? route('contactUs') : route('region.contactUs', $currentRegion);
+                 } elseif (Str::contains($slug, 'privacy')) {
+                    $url = $isUsRegion ? route('privacyPolicy') : route('region.privacyPolicy', $currentRegion);
+                 } elseif (Str::contains($slug, 'terms')) {
+                    $url = $isUsRegion ? route('termsofUse') : route('region.termsofUse', $currentRegion);
+                 } elseif (Str::contains($slug, 'affiliate')) {
+                    $url = $isUsRegion ? route('affiliateDisclaimer') : route('region.affiliateDisclaimer', $currentRegion);
+                 } elseif (Str::contains($slug, 'imprint')) {
+                    $url = $isUsRegion ? route('imprint') : route('region.imprint', $currentRegion);
+                 }
+
+                 return [
+                     'label' => $page->title,
+                     'category' => 'Pages',
+                     'url' => $url
+                 ];
+            })
+            ->filter(function($item) {
+                return $item['url'] !== '#';
+            });
+
+        // Merge results
+        $results = $stores->concat($categories)->concat($offers)->concat($blogs)->concat($pages);
+
+        return response()->json($results);
+    }
+
+
     public function blogs(Request $request)
     {
         $currentRegion = $this->regionService->getCurrentRegionCode();
 
         // Fetch active blogs from the database using the new fields, filtered by region
         $blogs = \App\Models\Blog::where('active', true)
-            ->where(function ($query) use ($currentRegion) {
-                $query->whereNull('country_codes')
-                    ->orWhere('country_codes', '[]')
-                    ->orWhere('country_codes', '')
-                    ->orWhereRaw("JSON_VALID(country_codes) AND JSON_CONTAINS(country_codes, ?)", [json_encode($currentRegion)])
-                    ->orWhereRaw("FIND_IN_SET(?, country_codes)", [$currentRegion]);
-            })
+            ->byRegionCodes([$currentRegion])
             ->orderBy('id', 'desc')
             ->paginate(8); // 8 blogs per page
 
@@ -342,6 +604,7 @@ class HomeController extends Controller
                 ->orWhere('url_slug', $blogWithSlash); // with slash
         })
             ->where('active', true)
+            ->byRegionCodes([$currentRegion]) // Filter by current region to find the correct blog (since duplicate slugs are allowed across regions)
             ->first();
 
         if (! $blog) {
@@ -388,33 +651,55 @@ class HomeController extends Controller
             abort(404, 'Blog not available in your region');
         }
 
-        return view('blog-detail', compact('blog', 'currentRegion'));
+        // Fetch FAQs related to this blog
+        $faqs = \App\Models\Faq::where('blog_id', $blog->id)->orderBy('sort')->get();
+
+        return view('blog-detail', compact('blog', 'currentRegion', 'faqs'));
     }
 
+        // Find Terms & Conditions page based on region availability
     public function terms()
     {
-        // Get current region code (e.g., "us", "fr", "pk", etc.)
+        // Get current region from the region service
         $currentRegion = $this->regionService->getCurrentRegionCode();
 
-        // Helper query for flexible matching
-        $termsQuery = function ($query) {
-            $query->where('slug', 'like', '%terms%')
-                ->orWhere('name', 'like', '%terms%');
-        };
-
-        // Try to find region-specific Terms & Conditions page
-        $page = Page::whereHas('region', function ($query) use ($currentRegion) {
-            $query->where('code', $currentRegion);
-        })
-            ->where($termsQuery)
+        // Find the Terms of Use page for the current region with flexible matching
+        $page = \App\Models\Page::where('active', true)
+            ->byRegionCodes([$currentRegion])
+            ->where(function ($query) {
+                $query->where('url_slug', '/terms-of-use/')
+                    ->orWhere('url_slug', 'terms-of-use')
+                    ->orWhere('url_slug', 'terms')
+                    ->orWhere('title', 'LIKE', '%terms%');
+            })
+            ->orderByRaw("
+                CASE
+                    WHEN JSON_VALID(country_codes) AND JSON_CONTAINS(country_codes, ?) THEN 1
+                    WHEN FIND_IN_SET(?, country_codes) > 0 THEN 1
+                    WHEN country_codes IS NULL OR country_codes = '[]' OR country_codes = '' THEN 2
+                    ELSE 3
+                END
+            ", [json_encode($currentRegion), $currentRegion])
             ->first();
 
-        // Fallback to default region (US) if not found
-        if (! $page) {
-            $page = Page::whereHas('region', function ($query) {
-                $query->where('code', 'us');
-            })
-                ->where($termsQuery)
+        // If no page found for current region, fall back to default region (US)
+        if (!$page) {
+            $page = \App\Models\Page::where('active', true)
+                ->byRegionCodes(['us'])
+                ->where(function ($query) {
+                    $query->where('url_slug', '/terms-of-use/')
+                        ->orWhere('url_slug', 'terms-of-use')
+                        ->orWhere('url_slug', 'terms')
+                        ->orWhere('title', 'LIKE', '%terms%');
+                })
+                ->orderByRaw("
+                    CASE
+                        WHEN JSON_VALID(country_codes) AND JSON_CONTAINS(country_codes, ?) THEN 1
+                        WHEN FIND_IN_SET(?, country_codes) > 0 THEN 1
+                        WHEN country_codes IS NULL OR country_codes = '[]' OR country_codes = '' THEN 2
+                        ELSE 3
+                    END
+                ", [json_encode('us'), 'us'])
                 ->first();
         }
 
@@ -431,28 +716,42 @@ class HomeController extends Controller
         $currentRegion = $this->regionService->getCurrentRegionCode();
 
         // Find the About Us page for the current region with flexible matching
-        $page = Page::whereHas('region', function ($query) use ($currentRegion) {
-            $query->where('code', $currentRegion);
-        })
+        $page = \App\Models\Page::where('active', true)
+            ->byRegionCodes([$currentRegion])
             ->where(function ($query) {
-                $query->where('slug', 'like', '%about%')
-                    ->orWhere('name', 'LIKE', '%About%')
-                    ->orWhere('name', 'LIKE', '%about%')
-                    ->orWhere('slug', 'like', '%About%');
+                $query->where('url_slug', '/about-us/')
+                    ->orWhere('url_slug', 'about-us')
+                    ->orWhere('url_slug', 'about')
+                    ->orWhere('title', 'LIKE', '%about%');
             })
+            ->orderByRaw("
+                CASE
+                    WHEN JSON_VALID(country_codes) AND JSON_CONTAINS(country_codes, ?) THEN 1
+                    WHEN FIND_IN_SET(?, country_codes) > 0 THEN 1
+                    WHEN country_codes IS NULL OR country_codes = '[]' OR country_codes = '' THEN 2
+                    ELSE 3
+                END
+            ", [json_encode($currentRegion), $currentRegion])
             ->first();
 
         // If no page found for current region, fall back to default region (US)
-        if (! $page) {
-            $page = Page::whereHas('region', function ($query) {
-                $query->where('code', 'us');
-            })
+        if (!$page) {
+            $page = \App\Models\Page::where('active', true)
+                ->byRegionCodes(['us'])
                 ->where(function ($query) {
-                    $query->where('slug', 'like', '%about%')
-                        ->orWhere('name', 'LIKE', '%About%')
-                        ->orWhere('name', 'LIKE', '%about%')
-                        ->orWhere('slug', 'like', '%About%');
+                    $query->where('url_slug', '/about-us/')
+                        ->orWhere('url_slug', 'about-us')
+                        ->orWhere('url_slug', 'about')
+                        ->orWhere('title', 'LIKE', '%about%');
                 })
+                ->orderByRaw("
+                    CASE
+                        WHEN JSON_VALID(country_codes) AND JSON_CONTAINS(country_codes, ?) THEN 1
+                        WHEN FIND_IN_SET(?, country_codes) > 0 THEN 1
+                        WHEN country_codes IS NULL OR country_codes = '[]' OR country_codes = '' THEN 2
+                        ELSE 3
+                    END
+                ", [json_encode('us'), 'us'])
                 ->first();
         }
 
@@ -467,28 +766,42 @@ class HomeController extends Controller
         $currentRegion = $this->regionService->getCurrentRegionCode();
 
         // Find the Privacy Policy page for the current region with flexible matching
-        $page = Page::whereHas('region', function ($query) use ($currentRegion) {
-            $query->where('code', $currentRegion);
-        })
+        $page = \App\Models\Page::where('active', true)
+            ->byRegionCodes([$currentRegion])
             ->where(function ($query) {
-                $query->where('slug', 'like', '%privacy%')
-                    ->orWhere('name', 'LIKE', '%Privacy%')
-                    ->orWhere('name', 'LIKE', '%privacy%')
-                    ->orWhere('slug', 'like', '%Privacy%');
+                $query->where('url_slug', '/privacy-policy/')
+                    ->orWhere('url_slug', 'privacy-policy')
+                    ->orWhere('url_slug', 'privacy')
+                    ->orWhere('title', 'LIKE', '%privacy%');
             })
+            ->orderByRaw("
+                CASE
+                    WHEN JSON_VALID(country_codes) AND JSON_CONTAINS(country_codes, ?) THEN 1
+                    WHEN FIND_IN_SET(?, country_codes) > 0 THEN 1
+                    WHEN country_codes IS NULL OR country_codes = '[]' OR country_codes = '' THEN 2
+                    ELSE 3
+                END
+            ", [json_encode($currentRegion), $currentRegion])
             ->first();
 
         // If no page found for current region, fall back to default region (US)
-        if (! $page) {
-            $page = Page::whereHas('region', function ($query) {
-                $query->where('code', 'us');
-            })
+        if (!$page) {
+            $page = \App\Models\Page::where('active', true)
+                ->byRegionCodes(['us'])
                 ->where(function ($query) {
-                    $query->where('slug', 'like', '%privacy%')
-                        ->orWhere('name', 'LIKE', '%Privacy%')
-                        ->orWhere('name', 'LIKE', '%privacy%')
-                        ->orWhere('slug', 'like', '%Privacy%');
+                    $query->where('url_slug', '/privacy-policy/')
+                        ->orWhere('url_slug', 'privacy-policy')
+                        ->orWhere('url_slug', 'privacy')
+                        ->orWhere('title', 'LIKE', '%privacy%');
                 })
+                ->orderByRaw("
+                    CASE
+                        WHEN JSON_VALID(country_codes) AND JSON_CONTAINS(country_codes, ?) THEN 1
+                        WHEN FIND_IN_SET(?, country_codes) > 0 THEN 1
+                        WHEN country_codes IS NULL OR country_codes = '[]' OR country_codes = '' THEN 2
+                        ELSE 3
+                    END
+                ", [json_encode('us'), 'us'])
                 ->first();
         }
 
@@ -503,28 +816,42 @@ class HomeController extends Controller
         $currentRegion = $this->regionService->getCurrentRegionCode();
 
         // Find the Affiliate Disclaimer page for the current region with flexible matching
-        $page = Page::whereHas('region', function ($query) use ($currentRegion) {
-            $query->where('code', $currentRegion);
-        })
+        $page = \App\Models\Page::where('active', true)
+            ->byRegionCodes([$currentRegion])
             ->where(function ($query) {
-                $query->where('slug', 'like', '%affiliate%')
-                    ->orWhere('name', 'LIKE', '%Affiliate%')
-                    ->orWhere('name', 'LIKE', '%affiliate%')
-                    ->orWhere('slug', 'like', '%Affiliate%');
+                $query->where('url_slug', '/affiliate-disclaimer/')
+                    ->orWhere('url_slug', 'affiliate-disclaimer')
+                    ->orWhere('url_slug', 'affiliate')
+                    ->orWhere('title', 'LIKE', '%affiliate%');
             })
+            ->orderByRaw("
+                CASE
+                    WHEN JSON_VALID(country_codes) AND JSON_CONTAINS(country_codes, ?) THEN 1
+                    WHEN FIND_IN_SET(?, country_codes) > 0 THEN 1
+                    WHEN country_codes IS NULL OR country_codes = '[]' OR country_codes = '' THEN 2
+                    ELSE 3
+                END
+            ", [json_encode($currentRegion), $currentRegion])
             ->first();
 
         // If no page found for current region, fall back to default region (US)
-        if (! $page) {
-            $page = Page::whereHas('region', function ($query) {
-                $query->where('code', 'us');
-            })
+        if (!$page) {
+            $page = \App\Models\Page::where('active', true)
+                ->byRegionCodes(['us'])
                 ->where(function ($query) {
-                    $query->where('slug', 'like', '%affiliate%')
-                        ->orWhere('name', 'LIKE', '%Affiliate%')
-                        ->orWhere('name', 'LIKE', '%affiliate%')
-                        ->orWhere('slug', 'like', '%Affiliate%');
+                    $query->where('url_slug', '/affiliate-disclaimer/')
+                        ->orWhere('url_slug', 'affiliate-disclaimer')
+                        ->orWhere('url_slug', 'affiliate')
+                        ->orWhere('title', 'LIKE', '%affiliate%');
                 })
+                ->orderByRaw("
+                    CASE
+                        WHEN JSON_VALID(country_codes) AND JSON_CONTAINS(country_codes, ?) THEN 1
+                        WHEN FIND_IN_SET(?, country_codes) > 0 THEN 1
+                        WHEN country_codes IS NULL OR country_codes = '[]' OR country_codes = '' THEN 2
+                        ELSE 3
+                    END
+                ", [json_encode('us'), 'us'])
                 ->first();
         }
 
@@ -539,34 +866,98 @@ class HomeController extends Controller
         $currentRegion = $this->regionService->getCurrentRegionCode();
 
         // Find the Imprint page for the current region with flexible matching
-        $page = Page::whereHas('region', function ($query) use ($currentRegion) {
-            $query->where('code', $currentRegion);
-        })
+        $page = \App\Models\Page::where('active', true)
+            ->byRegionCodes([$currentRegion])
             ->where(function ($query) {
-                $query->where('slug', 'like', '%imprint%')
-                    ->orWhere('name', 'LIKE', '%Imprint%')
-                    ->orWhere('name', 'LIKE', '%imprint%')
-                    ->orWhere('slug', 'like', '%Imprint%');
+                $query->where('url_slug', '/imprint/')
+                    ->orWhere('url_slug', 'imprint')
+                    ->orWhere('title', 'LIKE', '%imprint%');
             })
+            ->orderByRaw("
+                CASE
+                    WHEN JSON_VALID(country_codes) AND JSON_CONTAINS(country_codes, ?) THEN 1
+                    WHEN FIND_IN_SET(?, country_codes) > 0 THEN 1
+                    WHEN country_codes IS NULL OR country_codes = '[]' OR country_codes = '' THEN 2
+                    ELSE 3
+                END
+            ", [json_encode($currentRegion), $currentRegion])
             ->first();
 
         // If no page found for current region, fall back to default region (US)
-        if (! $page) {
-            $page = Page::whereHas('region', function ($query) {
-                $query->where('code', 'us');
-            })
+        if (!$page) {
+            $page = \App\Models\Page::where('active', true)
+                ->byRegionCodes(['us'])
                 ->where(function ($query) {
-                    $query->where('slug', 'like', '%imprint%')
-                        ->orWhere('name', 'LIKE', '%Imprint%')
-                        ->orWhere('name', 'LIKE', '%imprint%')
-                        ->orWhere('slug', 'like', '%Imprint%');
+                    $query->where('url_slug', '/imprint/')
+                        ->orWhere('url_slug', 'imprint')
+                        ->orWhere('title', 'LIKE', '%imprint%');
                 })
+                ->orderByRaw("
+                    CASE
+                        WHEN JSON_VALID(country_codes) AND JSON_CONTAINS(country_codes, ?) THEN 1
+                        WHEN FIND_IN_SET(?, country_codes) > 0 THEN 1
+                        WHEN country_codes IS NULL OR country_codes = '[]' OR country_codes = '' THEN 2
+                        ELSE 3
+                    END
+                ", [json_encode('us'), 'us'])
                 ->first();
         }
 
         $regions = Region::all(); // For region selector dropdown
 
         return view('imprint', compact('page', 'regions', 'currentRegion'));
+    }
+
+    public function contact()
+    {
+        // Get current region from the region service
+        $currentRegion = $this->regionService->getCurrentRegionCode();
+
+        // Find the Terms of Use page for the current region with flexible matching
+        $page = Page::where('active', true)
+            ->byRegionCodes([$currentRegion])
+            ->where(function ($query) {
+                $query->where('url_slug', '/contact-us/')
+                    ->orWhere('url_slug', 'contact-us')
+                    ->orWhere('url_slug', 'contact')
+                    ->orWhere('title', 'LIKE', '%contact%');
+            })
+            ->orderByRaw("
+                CASE
+                    WHEN JSON_VALID(country_codes) AND JSON_CONTAINS(country_codes, ?) THEN 1
+                    WHEN FIND_IN_SET(?, country_codes) > 0 THEN 1
+                    WHEN country_codes IS NULL OR country_codes = '[]' OR country_codes = '' THEN 2
+                    ELSE 3
+                END
+            ", [json_encode($currentRegion), $currentRegion])
+            ->first();
+
+        // If no page found for current region, fall back to default region (US)
+        if (!$page) {
+            $page = Page::where('active', true)
+                ->byRegionCodes(['us'])
+                ->where(function ($query) {
+                    $query->where('url_slug', '/contact-us/')
+                        ->orWhere('url_slug', 'contact-us')
+                        ->orWhere('url_slug', 'contact')
+                        ->orWhere('title', 'LIKE', '%contact%');
+                })
+                ->orderByRaw("
+                    CASE
+                        WHEN JSON_VALID(country_codes) AND JSON_CONTAINS(country_codes, ?) THEN 1
+                        WHEN FIND_IN_SET(?, country_codes) > 0 THEN 1
+                        WHEN country_codes IS NULL OR country_codes = '[]' OR country_codes = '' THEN 2
+                        ELSE 3
+                    END
+                ", [json_encode('us'), 'us'])
+                ->first();
+        }
+
+        // All regions for dropdown
+        $regions = Region::all();
+
+        // Return the Terms view
+        return view('contact-us', compact('page', 'regions', 'currentRegion'));
     }
 
     public function storeDetail($store = null)
@@ -602,6 +993,7 @@ class HomeController extends Controller
         // Build query to fetch a store by id or slug.
         // We prefer stores that explicitly include the current region in country_codes.
         $storeQuery = \App\Models\Store::where('active', true)
+            ->with(['socialLinks.socialApp', 'offers']) // Eager load social links with their social apps, and offers
             ->where(function ($q) use ($storeSlug, $slugWithSlash) {
                 $q->where('id', $storeSlug)
                     ->orWhere('url_slug', $storeSlug)
@@ -697,113 +1089,12 @@ class HomeController extends Controller
             ->take(10)
             ->get();
 
-        return view('store-detail', compact('store', 'offers', 'currentRegion', 'trendingStores', 'moreStores'));
+        // Fetch FAQs for the store
+        $faqs = \App\Models\Faq::where('store_id', $store->id)
+            ->orderBy('sort', 'asc')
+            ->get();
+
+        return view('store-detail', compact('store', 'offers', 'currentRegion', 'trendingStores', 'moreStores', 'faqs'));
     }
-
-    // public function storeDetail($store = null)
-    // {
-    //     $routeParameters = request()->route()->parameters();
-
-    //     // Determine slug and region based on route parameters
-    //     if (isset($routeParameters['region']) && isset($routeParameters['store'])) {
-    //         // Regional route: {region}/stores/{store}
-    //         $storeSlug     = $routeParameters['store'];
-    //         $currentRegion = $routeParameters['region'];
-    //     } elseif (isset($routeParameters['store'])) {
-    //         // Default route: stores/{store}
-    //         $storeSlug     = $routeParameters['store'];
-    //         $currentRegion = 'us'; // Default fallback
-    //     } else {
-    //         // Fallback to manually parsing the slug parameter that was passed
-    //         $storeSlug    = $store;
-    //         $segment1     = request()->segment(1);
-    //         $validRegions = $this->regionService->getRegionCodes();
-
-    //         if (in_array($segment1, $validRegions)) {
-    //             $currentRegion = $segment1;
-    //         } else {
-    //             $currentRegion = 'us';
-    //         }
-    //     }
-
-    //     // Handle slug formats — trim leading slash and prepare alternative match
-    //     $storeSlug     = ltrim($storeSlug, '/');
-    //     $slugWithSlash = '/' . $storeSlug;
-
-    //     // Fetch the specific store by slug or ID
-    //     $store = \App\Models\Store::where('active', true)
-    //         ->where(function ($query) use ($storeSlug, $slugWithSlash) {
-    //             $query->where('id', $storeSlug)
-    //                 ->orWhere('url_slug', $storeSlug)
-    //                 ->orWhere('url_slug', $slugWithSlash);
-    //         })
-    //         ->first();
-    //     if (!$store) {
-    //         abort(404, 'Store not found');
-    //     }
-
-    //     // --- REGION AVAILABILITY CHECK (SAME AS BLOG DETAIL) ---
-    //     $isAvailableInRegion = true;
-    //     $rawCountryCodes     = $store->attributes['country_codes'] ?? $store->getOriginal('country_codes') ?? $store->country_codes;
-    //     dd($rawCountryCodes);
-    //      // Check if raw value is already an array (due to accessor being called before), or a string
-    //     if (is_array($rawCountryCodes)) {
-    //         $codeArray = $rawCountryCodes;
-    //     } else {
-    //         if (! is_null($rawCountryCodes) && $rawCountryCodes !== '' && $rawCountryCodes !== '[]') {
-    //             $decoded = json_decode($rawCountryCodes, true);
-    //             if (is_array($decoded)) {
-    //                 $codeArray = $decoded;
-    //             } else {
-    //                 $cleanString = trim(str_replace(['[', ']', '"', "'"], '', $rawCountryCodes), ' ,');
-    //                 $codeArray   = ! empty($cleanString)
-    //                     ? array_filter(array_map('trim', explode(',', $cleanString)))
-    //                     : null;
-    //             }
-    //         } else {
-    //             $codeArray = null;
-    //         }
-    //     }
-
-    //     // Region filtering logic
-    //     if ($codeArray) {
-    //         $isAvailableInRegion = in_array($currentRegion, $codeArray, true);
-    //     }
-
-    //     if (! $isAvailableInRegion) {
-    //         abort(404, 'Store not available in your region');
-    //     }
-
-    //     // --- FETCH OFFERS FOR CURRENT REGION ---
-    //     $offers = \App\Models\Offer::where('store_id', $store->id)
-    //         ->where('active', true)
-    //         ->where(function ($query) use ($currentRegion) {
-    //             $query->whereNull('country_codes')
-    //                 ->orWhere('country_codes', '[]')
-    //                 ->orWhere('country_codes', '')
-    //                 ->orWhereRaw("JSON_VALID(country_codes) AND JSON_CONTAINS(country_codes, ?)", [json_encode($currentRegion)])
-    //                 ->orWhereRaw("FIND_IN_SET(?, REPLACE(country_codes, ' ', '')) > 0", [$currentRegion]);
-    //         })
-    //         ->orderBy('sort', 'asc')
-    //         ->get();
-
-    //     // Fetch trending stores (example: 5 most recently updated stores)
-    //     $trendingStores = \App\Models\Store::where('active', true)
-    //         ->byRegionCodes([$currentRegion])
-    //         ->where('id', '!=', $store->id) // Exclude the current store
-    //         ->orderBy('updated_at', 'desc')
-    //         ->take(5)
-    //         ->get();
-
-    //     // Fetch more stores (example: 10 other stores)
-    //     $moreStores = \App\Models\Store::where('active', true)
-    //         ->byRegionCodes([$currentRegion])
-    //         ->where('id', '!=', $store->id) // Exclude the current store
-    //         ->inRandomOrder()
-    //         ->take(10)
-    //         ->get();
-
-    //     return view('store-detail', compact('store', 'offers', 'currentRegion', 'trendingStores', 'moreStores'));
-    // }
 
 }

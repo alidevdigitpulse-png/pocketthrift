@@ -11,6 +11,8 @@
     padding: 20px 0;
 }
 
+
+
 .all-regions-header h1 {
     font-size: 32px;
     margin-bottom: 15px;
@@ -45,13 +47,13 @@
     transition: all 0.2s ease;
     text-align: center;
     background: #fff;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .region-item:hover {
-    box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
     transform: translateY(-2px);
-    border-color: #007bff;
+    border-color: #cf5103;
 }
 
 /* Flag icon styling - smaller size to match reference image */
@@ -128,7 +130,7 @@
     padding: 30px 20px;
     border-radius: 8px;
     background: #fff;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
 .deal-column img {
@@ -158,33 +160,33 @@
         grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
         gap: 12px;
     }
-    
+
     .region-item {
         padding: 12px 8px;
     }
-    
+
     .region-item .flag-icon {
         width: 28px;
         height: 20px;
         margin-bottom: 10px;
     }
-    
+
     .region-item .region-name {
         font-size: 12px;
     }
-    
+
     .all-regions-header h1 {
         font-size: 26px;
     }
-    
+
     .all-regions-header p {
         font-size: 14px;
     }
-    
+
     .deals-columns {
         flex-direction: column;
     }
-    
+
     .deal-column {
         min-width: 100%;
     }
@@ -195,25 +197,25 @@
         grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
         gap: 10px;
     }
-    
+
     .region-item {
         padding: 10px 6px;
     }
-    
+
     .region-item .flag-icon {
         width: 24px;
         height: 18px;
         margin-bottom: 8px;
     }
-    
+
     .region-item .region-name {
         font-size: 11px;
     }
-    
+
     .all-regions-container {
         padding: 15px;
     }
-    
+
     .deals-section h2 {
         font-size: 24px;
     }

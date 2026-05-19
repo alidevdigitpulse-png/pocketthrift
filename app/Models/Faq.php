@@ -13,6 +13,7 @@ class Faq extends Model
     protected $fillable = [
         'question',
         'answer',
+        'blog_id',
         'store_id',
         'sort',
         'created_by',
@@ -31,6 +32,11 @@ class Faq extends Model
     public function store()
     {
         return $this->belongsTo(Store::class);
+    }
+
+    public function blog()
+    {
+        return $this->belongsTo(Blog::class);
     }
 
     public function creator()

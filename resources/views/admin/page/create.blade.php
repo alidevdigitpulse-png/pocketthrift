@@ -1,279 +1,237 @@
 @extends('admin.layouts.app')
-@section('title', 'Add Page ')
+
+@section('title', isset($data) ? 'Edit Page' : 'Create Page')
+
 @section('content')
-    <div class="container-full">
-        <div class="content-header">
-            <div class="d-flex align-items-center">
-                <div class="mr-auto">
-                    <h3 class="page-title">{{ $data == null ? 'Add' : 'Update ' }} Page
-                        {{ $data == null ? '' : '#' . $data->id }}</h3>
-                    <div class="d-inline-block align-items-center">
-                        <nav>
-                            <ol class="breadcrumb">
-                                <li class="breadcrumb-item">
-                                    <a href="#"><i class="mdi mdi-home-outline">Page Management</i></a>
-                                </li>
-                                <li class="breadcrumb-item active" aria-current="page">
-                                    {{ $data == null ? 'Add' : 'Update ' }} Page</li>
-                            </ol>
-                        </nav>
-                    </div>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        {{ isset($data) ? 'Edit Page' : 'Create Page' }}
+                    </h6>
                 </div>
-            </div>
-        </div>
-        <section class="content">
-            <div class="row">
-                <div class="col-lg-12 col-12">
-                    <div class="box">
-                        @if ($errors->any())
-                            <ul class="alert alert-danger">
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
+                <div class="card-body">
+                    <form id="pageForm" method="POST" action="{{ isset($data) ? route('admin.page.update', $data->id) : route('admin.page.store') }}">
+                        @csrf
+                        @if(isset($data))
+                            @method('PUT')
                         @endif
-                        <div class="box-header with-border">
-                            <h4 class="box-title">{{ $data == null ? 'Upload' : 'Update ' }} Page Details</h4>
-                        </div>
-                        <!-- /.box-header -->
-                        <form class="form" method="post"
-                            action="{{ $data == null ? 
-                                (Auth::user()->assigned_regions && !Auth::user()->hasRole('admin') && Auth::user()->role != 1 ? route('admin.region.page.store') : route('admin.page.store')) : 
-                                (Auth::user()->assigned_regions && !Auth::user()->hasRole('admin') && Auth::user()->role != 1 ? route('admin.region.page.update', $data->id) : route('admin.page.update', $data->id)) }}"
-                            enctype="multipart/form-data" id="file-upload">
-                            @csrf
-                            <input type="hidden" id="section_data" name="section_data">
-                            {{ $data != null ? method_field('PUT') : '' }}
-                            <div class="box-body">
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <div class="form-group{{ $errors->has('name') ? 'has-error' : '' }}">
-                                            <label for="name" class="control-label">{{ 'Name' }}</label>
-                                            <input class="form-control" name="name" type="text" id="name"
-                                                value="{{ $data == null ? old('name') : (auth()->user()->assigned_regions && !auth()->user()->hasRole('admin') && auth()->user()->role != 1 ? preg_replace('/-\w+$/', '', $data->name) : $data->name) }}" required>
-                                            {!! $errors->first('name', '<p class="help-block">:message</p>') !!}
-                                        </div>
-                                        @if(auth()->user()->role == 1 || auth()->user()->hasRole('admin'))
-                                        <div class="form-group{{ $errors->has('region_id') ? 'has-error' : '' }}">
-                                            <label for="region_id" class="control-label">{{ 'Region' }}</label>
-                                            <select class="form-control" name="region_id" id="region_id" required>
-                                                <option value="">Select a Region</option>
-                                                @foreach($regions as $region)
-                                                    <option value="{{ $region->id }}" {{ ($data && $data->region_id == $region->id) ? 'selected' : '' }}>
-                                                        {{ $region->country }} ({{ $region->code }})
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label for="title">Title *</label>
+                                    <input type="text" class="form-control" id="title" name="title" value="{{ old('title', $data->title ?? '') }}" required>
+                                    @error('title')
+                                        <div class="text-danger">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="url_slug">URL Slug</label>
+                                    <input type="text" class="form-control" id="url_slug" name="url_slug" value="{{ old('url_slug', $data->url_slug ?? '') }}">
+                                    <small class="form-text text-muted">Leave empty to auto-generate from title</small>
+                                    @error('url_slug')
+                                        <div class="text-danger">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="content_body">Content Body</label>
+                                    <textarea class="editor" id="content_body" name="content_body" rows="10">{!! old('content_body', $data->content_body ?? '') !!}</textarea>
+                                    @error('content_body')
+                                        <div class="text-danger">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="seo_title">SEO Title</label>
+                                    <input type="text" class="form-control" id="seo_title" name="seo_title" value="{{ old('seo_title', $data->seo_title ?? '') }}">
+                                    @error('seo_title')
+                                        <div class="text-danger">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="seo_meta_keyword">SEO Meta Keywords</label>
+                                    <textarea class="form-control" id="seo_meta_keyword" name="seo_meta_keyword" rows="3">{{ old('seo_meta_keyword', $data->seo_meta_keyword ?? '') }}</textarea>
+                                    @error('seo_meta_keyword')
+                                        <div class="text-danger">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="meta_description">Meta Description</label>
+                                    <textarea class="form-control" id="meta_description" name="meta_description" rows="3">{{ old('meta_description', $data->meta_description ?? '') }}</textarea>
+                                    @error('meta_description')
+                                        <div class="text-danger">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="meta_robots">Meta Robots</label>
+                                    <input type="text" class="form-control" id="meta_robots" name="meta_robots" value="{{ old('meta_robots', $data->meta_robots ?? '') }}">
+                                    <small class="form-text text-muted">e.g., index, follow</small>
+                                    @error('meta_robots')
+                                        <div class="text-danger">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="card shadow-sm">
+                                    <div class="card-header bg-secondary text-white">
+                                        <h6 class="mb-0">Page Settings</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            <label for="country_codes">Available in Regions</label>
+                                            <select class="form-control" id="country_codes" name="country_codes[]" multiple>
+                                                @foreach(\App\Models\Region::all() as $region)
+                                                    @php
+                                                        $selectedCodes = old('country_codes', $data->country_codes ?? []);
+                                                        if (is_string($selectedCodes)) {
+                                                            $selectedCodes = explode(',', $selectedCodes);
+                                                        }
+                                                    @endphp
+                                                    <option value="{{ $region->code }}" 
+                                                        {{ in_array($region->code, $selectedCodes) ? 'selected' : '' }}>
+                                                        {{ $region->country }}
                                                     </option>
                                                 @endforeach
                                             </select>
-                                            {!! $errors->first('region_id', '<p class="help-block">:message</p>') !!}
+                                            <small class="form-text text-muted">Hold Ctrl/Cmd to select multiple regions</small>
+                                            @error('country_codes')
+                                                <div class="text-danger">{{ $message }}</div>
+                                            @enderror
                                         </div>
-                                        @else
-                                            @php
-                                                $userRegion = \App\Models\Region::where('code', Auth::user()->assigned_regions)->first();
-                                            @endphp
-                                            @if($userRegion)
-                                                <input type="hidden" name="region_id" value="{{ $userRegion->id }}">
-                                                <div class="form-group">
-                                                    <label class="control-label">Region</label>
-                                                    <input type="text" class="form-control" value="{{ $userRegion->country }} ({{ $userRegion->code }})" readonly>
-                                                </div>
-                                            @endif
-                                        @endif
+
                                         <div class="form-group">
-                                            <label for="image">Image</label>
-                                            <input type="file" class="dropify" name="page_image" id="image" {{ $data != null ? 'data-default-file = ' .asset($data->image) : ''}}>
+                                            <label for="start_date">Start Date</label>
+                                            <input type="date" class="form-control" id="start_date" name="start_date" value="{{ old('start_date', isset($data) && $data->start_date ? $data->start_date->format('Y-m-d') : '') }}">
+                                            @error('start_date')
+                                                <div class="text-danger">{{ $message }}</div>
+                                            @enderror
                                         </div>
+
                                         <div class="form-group">
-                                            <label for="">Status</label>
-                                            <select name="status" id="" class="form-control">
-                                                <option value="0"
-                                                    {{ $data != null && $data->status == 0 ? 'selected' : '' }}>Active
-                                                </option>
-                                                <option value="1"
-                                                    {{ $data != null && $data->status == 1 ? 'selected' : '' }}>
-                                                    Deactive</option>
-                                            </select>
+                                            <label for="end_date">End Date</label>
+                                            <input type="date" class="form-control" id="end_date" name="end_date" value="{{ old('end_date', isset($data) && $data->end_date ? $data->end_date->format('Y-m-d') : '') }}">
+                                            @error('end_date')
+                                                <div class="text-danger">{{ $message }}</div>
+                                            @enderror
                                         </div>
-                                        @if ($data)
-                                            @foreach ($data->sections as $item)
-                                                <div class="form-group">
-                                                    <label for="{{ $item->slug }}">{{ $item->name }}</label>
-                                                    @if ($item->type == 'text')
-                                                        <input type="text" class="form-control"
-                                                            name="section[{{ $item->slug }}]"
-                                                            value="{{ $item->value }}">
-                                                    @elseif ($item->type == 'textarea')
-                                                        <textarea class="editor" name="section[{{ $item->slug }}]" value={{ $item->value }}>{{ $item->value }}</textarea>
-                                                    @elseif ($item->type == 'image')
-                                                        <input type="file" class="dropify"
-                                                            name="image[{{ $item->slug }}]"
-                                                            {{ $item->value != null ? 'data-default-file = ' . asset($item->value) : '' }}>
-                                                    @endif
-                                                </div>
-                                            @endforeach
-                                        @endif
 
-                                        <div id="extra-sections"></div>
-                                        @if ($data && env('APP_DEBUG'))
-                                            <div class="form-group">
-                                                <button type="button" class="btn btn-primary btn-sm" data-toggle="modal"
-                                                    data-target="#add-section">
-                                                    Add Section
-                                                </button>
-                                            </div>
-                                        @endif
+                                        <div class="form-group">
+                                            <label for="sort">Sort Order</label>
+                                            <input type="number" class="form-control" id="sort" name="sort" value="{{ old('sort', $data->sort ?? 0) }}">
+                                            @error('sort')
+                                                <div class="text-danger">{{ $message }}</div>
+                                            @enderror
+                                        </div>
 
+                                        <div class="form-group form-check">
+                                            <input type="checkbox" class="form-check-input" id="active" name="active" value="1" {{ old('active', $data->active ?? true) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="active">Active</label>
+                                            @error('active')
+                                                <div class="text-danger">{{ $message }}</div>
+                                            @enderror
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="form-group">
-                                    <div class="progress">
-                                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-success result"
-                                            role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
-                                            style="width: 0%" id="progressBar">0%</div>
-
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="box-footer">
-                                <button type="button" class="btn btn-rounded btn-warning btn-outline mr-1">
-                                    <i class="ti-trash"></i> Cancel
-                                </button>
-                                <button type="submit" class="btn btn-rounded btn-primary btn-outline" onclick="progress()">
-                                    <i class="ti-save-alt"></i> Save
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </div>
-
-@endsection
-
-@push('css')
-    <style>
-        .toggle.switch {
-            float: right;
-            border-radius: 23px;
-        }
-
-        span.toggle-handle.btn.btn-light.btn-sm {
-            border-radius: 50%;
-        }
-
-        .toggle.btn.btn-sm.switch.btn-primary span {
-            margin-right: 15px;
-        }
-
-        .toggle.btn.btn-sm.switch.btn-light.off span {
-            margin-left: 15px;
-        }
-    </style>
-@endpush
-@push('modals')
-    <div class="modal modal-primary fade" id="add-section">
-        <div class="modal-dialog">
-            <div class="modal-content bg-primary">
-                <div class="modal-header">
-                    <h4 class="modal-title">Add New Section</h4>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span></button>
-                </div>
-                <div class="modal-body">
-                    <div class="box-body">
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <label for="name-section">Name</label>
-                                    <input id="section_title" type="text" class="form-control" name="title">
-                                </div>
-                                <div class="form-group">
-                                    <label for="name-section">Type</label>
-                                    <select id="section_type" class="form-control">
-                                        <option value="text">Text</option>
-                                        <option value="textarea">Textarea</option>
-                                        <option value="image">Image</option>
-                                    </select>
                                 </div>
                             </div>
                         </div>
-                    </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-12 text-right">
+                                <a href="{{ route('admin.page.index') }}" class="btn btn-secondary">Cancel</a>
+                                <button type="submit" class="btn btn-primary">{{ isset($data) ? 'Update Page' : 'Create Page' }}</button>
+                            </div>
+                        </div>
                     </form>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
-                    <button type="button" id="sectionsave" class="btn btn-primary float-right">Save changes</button>
-                </div>
             </div>
-            <!-- /.modal-content -->
         </div>
-        <!-- /.modal-dialog -->
     </div>
-@endpush
-@push('js')
-    @if ($data)
-        <script>
-            $('#sectionsave').click(function() {
-                $.ajaxSetup({
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    }
-                });
-                $.ajax({
-                    _token: "{{ csrf_token() }}",
-                    url: "{{ Auth::user()->assigned_regions && !Auth::user()->hasRole('admin') && Auth::user()->role != 1 ? route('admin.section.create') : route('admin.section.create') }}",
-                    type: "post",
-                    data: {
-                        name: $('#section_title').val(),
-                        type: $('#section_type').val(),
-                        page_id: {{ $data->id }}
-                    },
-                    dataType: "json",
-                    success: function(response) {
-                        if (response.status) {
-                            $('#add-section').modal('hide');
-                            let formInput;
-                            if ($('#section_type').val() == 'text') {
-                                formInput = `<div class="form-group">
-                                            <label  class="control-label">${$('#section_title').val()}</label>
-                                            <input class="form-control" name="section[${response.slug}]" type="text">
-                                        </div>`;
+</div>
 
-                            } else if ($('#section_type').val() == 'textarea') {
-                                formInput = `<div class="form-group">
-                                            <label  class="control-label">${$('#section_title').val()}</label>
-                                            <textarea class="editor" name="section[${response.slug}]"></textarea>
-                                        </div>`;
-                            } else if ($('#section_type').val() == 'image') {
-                                formInput = `<div class="form-group">
-                                            <label class="control-label">${$('#section_title').val()}</label>
-                                            <input type="file" class="dropify" name="image[${response.slug}]">
-                                        </div>`;
-                            }
-                            $('#extra-sections').append(formInput)
-                            if ($('#section_type').val() == 'textarea') {
-                                setTimeout(() => {
-                                    $('.editor').summernote();
-                                }, 5);
-                            } else if ($('#section_type').val() == 'image') {
-                                setTimeout(() => {
-                                    $('.dropify').dropify();
-                                }, 5);
-                            }
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-generate slug from title
+    const titleInput = document.getElementById('title');
+    const slugInput = document.getElementById('url_slug');
+    
+    if (!slugInput.value) {
+        titleInput.addEventListener('input', function() {
+            const title = this.value.trim();
+            if (!slugInput.value) { // Only auto-generate if slug is empty
+                const slug = title.toLowerCase()
+                    .replace(/[^\w\s-]/g, '') // Remove special characters
+                    .replace(/\s+/g, '-'); // Replace spaces with hyphens
+                slugInput.value = slug;
+            }
+        });
+    }
 
-                        }
+    // Initialize multiple select for country codes
+    const countryCodesSelect = document.getElementById('country_codes');
+    if (countryCodesSelect) {
+        // Add select/deselect all functionality
+        const selectAllBtn = document.createElement('button');
+        selectAllBtn.type = 'button';
+        selectAllBtn.className = 'btn btn-sm btn-outline-secondary mb-2';
+        selectAllBtn.textContent = 'Select All';
+        selectAllBtn.addEventListener('click', function() {
+            for (let i = 0; i < countryCodesSelect.options.length; i++) {
+                countryCodesSelect.options[i].selected = true;
+            }
+        });
 
-                    }
-                })
-            })
+        const selectNoneBtn = document.createElement('button');
+        selectNoneBtn.type = 'button';
+        selectNoneBtn.className = 'btn btn-sm btn-outline-secondary mb-2 ml-2';
+        selectNoneBtn.textContent = 'Select None';
+        selectNoneBtn.addEventListener('click', function() {
+            for (let i = 0; i < countryCodesSelect.options.length; i++) {
+                countryCodesSelect.options[i].selected = false;
+            }
+        });
 
-            $('input[type="checkbox"]').change(function() {
-                ($(this).prop("checked")) ? $(this).val(1): $(this).val(0);
-            })
-            $('#addsection').click(function() {
-                $('#add-section-modal').modal()
-            })
-        </script>
-    @endif
+        countryCodesSelect.parentNode.insertBefore(selectAllBtn, countryCodesSelect);
+        countryCodesSelect.parentNode.insertBefore(selectNoneBtn, countryCodesSelect);
+    }
 
-@endpush
+    // Handle form submission
+    const form = document.getElementById('pageForm');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        
+        fetch(form.action, {
+            method: form.method,
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status) {
+                alert(data.message);
+                window.location.href = '{{ route("admin.page.index") }}';
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while saving the page.');
+        });
+    });
+});
+</script>
+@endsection

@@ -1,9 +1,37 @@
 @extends('layouts.app')
+    @section('title', $store->seo_title . ', ' . __(date('F')) . ' ' . date('Y'))
+    @section('meta_description', $store->meta_description)
 @push('schemas')
+    <meta name="robots" content="{{ $store->meta_robots }}">
+    
+    {{-- Open Graph Meta Tags --}}
+    <meta property="og:title" content="{{ $store->seo_title . ', ' . __(date('F')) . ' ' . date('Y') }}">
+    <meta property="og:description" content="{{ $store->meta_description }}">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:type" content="website">
+    @if($store->logo)
+        <meta property="og:image" content="{{ asset('uploads/' . $store->logo) }}">
+    @else
+        <meta property="og:image" content="https://pocketthrift.com/images/og-image.webp">
+    @endif
+    <meta property="og:image:alt" content="{{ $store->title }}">
+    <meta property="og:site_name" content="PocketThrift">
+    
+    {{-- Twitter Card Meta Tags --}}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $store->twitter_title . ', ' . __(date('F')) . ' ' . date('Y') }}">
+    <meta name="twitter:description" content="{{ $store->meta_description }}">
+    @if($store->logo)
+        <meta name="twitter:image" content="{{ asset('uploads/' . $store->logo) }}">
+    @else
+        <meta name="twitter:image" content="https://pocketthrift.com/images/og-image.webp">
+    @endif
+    <meta name="twitter:image:alt" content="{{ $store->title }}">
+    
 @php
     // Get region code from multiple sources
     $regionCode = $region->code ?? ($regionCode ?? null);
-    
+
     // If still null, try to extract from current URL path
     if (!$regionCode) {
         $path = request()->path();
@@ -15,89 +43,93 @@
             $regionCode = 'us';
         }
     }
-    
+
     // Define region names mapping
     $regions = [
-        'us' => 'USA', 
-        'uk' => 'United Kingdom', 
+        'us' => 'USA',
+        'uk' => 'United Kingdom',
         'au' => 'Australia',
-        'ca' => 'Canada', 
-        'fr' => 'France', 
+        'ca' => 'Canada',
+        'fr' => 'France',
         'de' => 'Germany',
-        'it' => 'Italy', 
-        'nl' => 'Netherlands', 
+        'it' => 'Italy',
+        'nl' => 'Netherlands',
         'pl' => 'Poland',
-        'es' => 'Spain', 
-        'mx' => 'Mexico', 
+        'es' => 'Spain',
+        'mx' => 'Mexico',
         'ch' => 'Switzerland',
-        'lu' => 'Luxembourg', 
-        'fi' => 'Finland', 
+        'lu' => 'Luxembourg',
+        'fi' => 'Finland',
         'no' => 'Norway',
-        'nz' => 'New Zealand', 
-        'sg' => 'Singapore', 
+        'nz' => 'New Zealand',
+        'sg' => 'Singapore',
         'at' => 'Austria'
     ];
-    
+
     $regionName = $regions[$regionCode] ?? strtoupper($regionCode);
     $baseUrl = rtrim(config('app.url','https://pocketthrift.com'), '/');
-    
+
     // SITE URL ALWAYS REGIONIZED
     $siteUrl = ($regionCode === 'us') ? $baseUrl : $baseUrl . '/' . $regionCode;
-    
+
     // Get store name from page or slug
     $storeName = $store->name ?? ($page->name ?? '');
     $storeName = preg_replace('/-' . $regionCode . '$/i', '', $storeName);
     $storeName = trim($storeName);
-    
+
     // Build title and description
     $title = $meta['title'] ?? ($page->meta_title ?? $storeName);
     $description = $meta['description'] ?? ($page->meta_description ?? null);
-    
+
     // Replace region placeholders
     $title = str_replace(['$regionName', '$regionCode', '$storeName'], [$regionName, $regionCode, $storeName], $title);
     $description = str_replace(['$regionName', '$regionCode', '$storeName'], [$regionName, $regionCode, $storeName], $description);
-    
+
     $path = $meta['path'] ?? request()->getPathInfo();
-    
+
     // Remove region code from path if it exists to avoid duplication
     $pathWithoutRegion = $path;
     if ($regionCode !== 'us' && strpos($path, '/' . $regionCode . '/') === 0) {
         $pathWithoutRegion = substr($path, strlen('/' . $regionCode));
     }
-    
+
     // Clean the path
     $cleanPath = trim($pathWithoutRegion, '/');
-    
+
     // FULL URL: Build properly formatted URL
     if (!empty($cleanPath)) {
         $fullUrl = rtrim($siteUrl, '/') . '/' . $cleanPath . '/';
     } else {
         $fullUrl = rtrim($siteUrl, '/') . '/';
     }
-    
+
     // Build stores page URL
     $storesPath = 'stores';
     $storesUrl = rtrim($siteUrl, '/') . '/' . $storesPath . '/';
-    
+
     // INITIALIZE BREADCRUMBS (3 levels: Home > Stores > Store Name)
     $breadcrumbs = $meta['breadcrumbs'] ?? [
-        ['name'=>'Home', 'url'=>$siteUrl],
-        ['name'=>'Stores', 'url'=>$storesUrl],
+        ['name'=>__('Home'), 'url'=>$siteUrl],
+        ['name'=>__('Stores'), 'url'=>$storesUrl],
         ['name'=>$storeName, 'url'=>$fullUrl]
     ];
-    
+
     // Force correct URLs
     $breadcrumbs[0]['url'] = $siteUrl;
     $breadcrumbs[1]['url'] = $storesUrl;
 @endphp
 
 @php
-    // WebPage Schema
+    // WebPage Schema - Use the same values as the meta tags for consistency
+    // Use the exact same values as @section('title') and @section('meta_description')
+    $webPageTitle = $store->seo_title ?? (!empty($store->title) ? $store->title . ' - Coupons & Promo Codes' : 'Store Details');
+    $webPageDescription = $store->meta_description ?? (!empty($store->description) ? $store->description : (!empty($store->title) ? 'Find the latest ' . $store->title . ' coupons, promo codes, and deals. Save money with our verified offers.' : 'Store details and offers'));
+
     $webpage = [
         "@context"=>"https://schema.org/",
         "@type"=>"WebPage",
-        "name"=>$title,
-        "description"=>$description,
+        "name"=>$webPageTitle . ', ' . date('F Y'),
+        "description"=>$webPageDescription,
         "url"=>$fullUrl,
         "publisher"=>[
             "@type"=>"Organization",
@@ -108,44 +140,77 @@
             ]
         ]
     ];
-    
-    // Breadcrumb Schema
+
+    // Breadcrumb Schema - Ensure proper names and URLs for each breadcrumb item
     $crumbItems = [];
     $pos = 1;
-    
+
     foreach($breadcrumbs as $b){
-        $url = $b['url'];
-        
+        // Get the name and URL from the breadcrumb
+        $name = isset($b['name']) ? $b['name'] : '';
+        $url = isset($b['url']) ? $b['url'] : '';
+
+        // Special handling for each position
+        if ($pos === 1) {
+            // First breadcrumb (Home) - ensure name and URL are not empty
+            $name = (!empty($name) && trim($name) !== '') ? $name : 'Home';
+            // Get the route to the appropriate home page based on region
+            $homeUrl = $regionCode === 'us' ? route('home') : route('region.home', ['region' => $regionCode]);
+            // Ensure the URL is always set to the home URL, with fallback to app URL
+            $url = !empty($homeUrl) ? $homeUrl : rtrim(config('app.url', 'https://pocketthrift.com'), '/');
+        } elseif ($pos === 2) {
+            // Second breadcrumb (Stores) - ensure name and URL are not empty
+            $name = (!empty($name) && trim($name) !== '') ? $name : 'Stores';
+            // Ensure the URL is always set to the stores URL for the Stores breadcrumb
+            $url = !empty($storesUrl) ? $storesUrl : rtrim(config('app.url', 'https://pocketthrift.com'), '/') . '/stores/';
+        } elseif ($pos === 3) {
+            // Third breadcrumb (Store Name) - special handling
+            if ((empty($name) || trim($name) === '') && !empty($store->title)) {
+                $name = $store->title;
+            } elseif (empty($name) || trim($name) === '') {
+                $name = 'Store';
+            }
+            $url = (!empty($url) && trim($url) !== '') ? $url : $fullUrl;
+        } else {
+            // Any other positions
+            if (empty($name) || trim($name) === '') {
+                $name = 'Untitled';
+            }
+            if (empty($url) || trim($url) === '') {
+                $url = '#';
+            }
+        }
+
         $crumbItems[] = [
             "@type"=>"ListItem",
             "position"=>$pos++,
-            "name"=>$b['name'],
+            "name"=>$name,
             "item"=>$url
         ];
     }
-    
+
     $breadcrumbSchema = [
         "@context"=>"https://schema.org/",
         "@type"=>"BreadcrumbList",
         "itemListElement"=>$crumbItems
     ];
-    
+
     // FAQ Schema (if FAQs exist)
     $faqSchema = null;
-    if (!empty($faqs) && is_array($faqs)) {
+    if (isset($faqs) && $faqs->isNotEmpty()) {
         $faqItems = [];
-        
+
         foreach($faqs as $faq) {
             $faqItems[] = [
                 "@type"=>"Question",
-                "name"=>$faq['question'] ?? $faq['name'] ?? '',
+                "name"=>$faq->question,
                 "acceptedAnswer"=>[
                     "@type"=>"Answer",
-                    "text"=>$faq['answer'] ?? $faq['text'] ?? ''
+                    "text"=>$faq->answer
                 ]
             ];
         }
-        
+
         if (!empty($faqItems)) {
             $faqSchema = [
                 "@context"=>"https://schema.org/",
@@ -173,6 +238,32 @@
 
 @section('content')
 <style>
+    p{
+        font-size: 14px;
+    }
+    span.offers-text {
+    text-align: center;
+}
+
+    .offer-action p{
+        color: #cf5103;
+    font-size: 16px;
+    line-height: 1.2;
+    border: 1px dashed;
+    width: 100%;
+    padding: 5px 6px;
+    display: flex;
+    border-radius: 5px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    margin-left: 17px;
+    max-width: 120px;
+    text-align: center;
+}
+    .offer-action .offers-text {
+        width: 100%;
+    }
     .coupon-card {
         background-color: #f8f9fa;
         border: 1px solid #dee2e6;
@@ -186,9 +277,22 @@
         justify-content: center;
         height: 80px;
         width: 80px;
-        border: 1px dashed #ff4700;
+        border: 1px dashed #cf5103;
         border-radius: .25rem;
         padding: .5rem;
+    }
+    
+    /* Make both buttons have the same width */
+    .reveal-code-button,
+    .deal-button {
+        min-width: 150px;
+        width: 150px;
+    }
+    
+    /* Hide line breaks on desktop - keep text in one line */
+    .reveal-code-button br,
+    .deal-button br {
+        display: none;
     }
     .coupon-card .store-logo img {
         max-width: 100%;
@@ -199,29 +303,57 @@
         font-weight: 600;
         margin: 5px 0;
     }
+
+    .container > .row > .col-4 img {
+        height: 140px !important;
+    }
+
     @media (max-width: 767.98px) {
         .coupon-card .offer-details h3 { font-size: 14px; }
-        .coupon-card .offer-details { text-align: center; }
     }
-    .coupon-card .offer-details .offer-meta {
+   
+    .coupon-card .offer-details {
         font-size: .875rem;
         color: #6c757d;
     }
-    .coupon-card .offer-action .reveal-code-button {
-    border: 2px dashed #002b61;
+    button.coupon-card {
+    border: 2px dashed #cf5103;
     border-radius: 0px;
     padding: 7px 20px;
-    background-color: #002b61;
+    background-color: #cf5103;
+    color: #fff;
+    font-weight: 600;
+    position: relative;
+    clip-path: polygon(0 0, 100% 0, 91% 100%, 0 100%);
+}
+  button.deal-button {
+    border: 2px dashed #fff;
+    border-radius: 0px;
+    padding: 7px 20px;
+    background-color: #cf5103;
+    color: #fff;
+    font-weight: 600;
+    position: relative;
+}
+.deal-button:hover, .reveal-code-button:hover{
+    background-color: #1a2043;
+    transition: all .5s ease-in-out;
+}
+  button.reveal-code-button {
+    border: 2px dashed #cf5103;
+    border-radius: 0px;
+    padding: 7px 20px;
+    background-color: #cf5103;
     color: #fff;
     font-weight: 600;
     position: relative;
     clip-path: polygon(0 0, 100% 0, 91% 100%, 0 100%);
 }
     .coupon-card .offer-action .deal-button {
-      border: 2px dashed #002b61;
+      border: 2px dashed #cf5103;
     border-radius: 0px;
     padding: 7px 20px;
-    background-color: #002b61;
+    background-color: #cf5103;
     color: #fff;
     font-weight: 600;
     position: relative;
@@ -231,11 +363,16 @@
     .coupon-card .offer-action .reveal-code-button:hover {
         background: #ee7b42;
         color: #000;
-        border: 2px dashed #002b61;
+        border: 2px dashed #cf5103;
     }
     .sidebar .widget {
         margin-bottom: 2rem;
     }
+    .con-det h3 {
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 21px;
+}
     .sidebar .widget-title {
         font-size: 1.125rem;
         font-weight: 600;
@@ -261,82 +398,50 @@
         border: 1px solid #ddd;
     }
     .active-tab-style {
-        background-color: #002b61;
+        background-color: #cf5103;
         color: white;
     }
     .coupon-modal .modal-content {
         border-radius: 0.5rem;
-        border: 2px dashed #ff4700;
+        border: 2px dashed #cf5103;
         overflow: hidden;
     }
-    .discount-banner {
-        background: linear-gradient(135deg, #002b61, #004e92);
-        position: relative;
-        padding-top: 1rem;
-    }
-    .discount-banner h3 {
-        color: #ff4700;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .coupon-modal .modal-header {
-        border-bottom: none;
-        padding: 0.5rem 3.5rem 0.5rem 1rem; /* Extra padding on right to accommodate close button */
-        position: relative;
-    }
-    .coupon-modal .store-logo-modal {
-        /*
-        position: absolute;
-        top: 10px; /* Adjusted positioning */
-        right: 60px; /* Positioned to the left of the close button */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 60px;
-        width: 100px;
-        border: 1px dashed #ff4700;
-        border-radius: .25rem;
-        padding: .5rem;
-        background-color: white;
-        z-index: 10; /* Ensure logo appears above other elements */
-        box-sizing: border-box; /* Include padding in width calculation */
-        */
+    .coupon-modal .btn-close {
+        background-color: #cf5103!important;
+        border-radius: 50% !important;
+        opacity: 1 !important;
+        color: white !important; /* Set the icon color to white */
+        padding: 5px !important;
+        box-shadow: none !important;
+        --bs-btn-close-bg: none;
+        --bs-btn-close-color: #fff; /* Ensure the SVG icon color is white */
     }
     .coupon-modal .store-logo-modal img {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain; /* Ensure image fits properly without distortion */
+        max-height: 50px;
+        max-width: 80px;
+        border: 1px dashed #cf5103;
+        padding: 5px;
     }
-    .modal-body-content {
-        padding-top: 0.5rem;
-    }
-    .coupon-modal .coupon-code-container {
-        border: 2px dashed #ccc;
-        border-radius: 0.25rem;
-        margin-bottom: 1rem;
-    }
+    .offer-meta {
+    display: flex;
+    align-items: center;
+}
     .coupon-modal .coupon-code {
         font-size: 1.5rem;
         font-weight: bold;
-        color: #002b61;
-        word-break: break-all; /* Handle long codes nicely */
+        color: #cf5103;
+        word-break: break-all;
     }
     .coupon-modal .copy-code-btn {
-        background-color: #002b61;
+        background-color: #cf5103;
         color: #fff;
         border: none;
         padding: 0.75rem 1.5rem;
         border-radius: 0.25rem;
         cursor: pointer;
-        flex-shrink: 0; /* Prevent button from shrinking */
-        height: fit-content;
-        align-self: center; /* Align button vertically with code */
-    }
-    .coupon-modal .go-to-website {
-        text-align: center;
-        margin: 1rem 0;
     }
     .coupon-modal .go-to-website a {
-        color: #ff4700;
+        color: #cf5103;
         text-decoration: none;
         font-weight: 600;
     }
@@ -357,31 +462,157 @@
         font-weight: 600;
         margin-bottom: 0.5rem;
     }
-    .coupon-modal .detail-section ul {
-        padding-left: 1.2rem;
-        margin-bottom: 0;
-        list-style-type: disc; /* Ensure list bullets are visible */
+    .detail-section.mt-3{
+        display: none !important;
     }
+    .coupon-modal .detail-section ul {
+        padding-left: 1.4rem;
+        margin-bottom: 0;
+        list-style-type: disc;
+    }
+    a.follow-icons {
+    font-size: 30px;
+}
 
     @media (max-width: 767.98px) {
+        .container > .row > .col-4 img {
+            height: 80px !important;
+        }
+
+        /* Reduce card padding and margins */
+        .coupon-card {
+            padding: 10px 8px;
+            margin-bottom: 8px;
+        }
+        
         .coupon-card .row > [class*="col-"] {
-            margin-bottom: 1rem;
+            margin-bottom: 0px;
+            padding-left: 5px;
+            padding-right: 5px;
+        }
+        
+        .resp-h1 {
+            font-size: 17px !important;
+            text-align: left;
+        }
+
+        .resp-h2 {
+            font-size: 15px !important;
+            text-align: left;
+        }
+
+        .coupon-card .offer-details {
+            font-size: 10px;
         }
         .coupon-card .store-logo {
             margin: 0 auto;
         }
+        
+        /* Mobile layout for coupon cards */
+        .coupon-card .row {
+            display: flex;
+            flex-wrap: wrap !important;
+            align-items: center;
+        }
+        
+        /* Discount column - left side (1st col) */
+        .coupon-card .row > div:nth-child(1) {
+            flex: 0 0 30% !important;
+            max-width: 30% !important;
+            padding-right: 5px;
+        }
+        
+        /* Title column - center (2nd col) */
+        .coupon-card .row > div:nth-child(2) {
+            flex: 0 0 70% !important;
+            max-width: 70% !important;
+            padding-left: 5px;
+            padding-right: 5px;
+        }
+        
+        /* Button column - bottom (3rd col) */
+        .coupon-card .row > div:nth-child(3) {
+            flex: 0 0 100% !important;
+            max-width: 100% !important;
+            margin-top: 10px;
+            padding-left: 0;
+            padding-right: 0;
+            text-align: center;
+        }
+        
+        /* Adjust discount text size and spacing */
+        .coupon-card .offer-action .offers-text {
+            font-size: 15px !important; /* Set to 15px */
+            line-height: 1.1 !important;
+            
+        }
+        
+        .coupon-card .offer-action p {
+        font-size: 15px !important; /* Set to 15px */
+        margin-bottom: 0 !important;
+        line-height: 1.2 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: 4px !important;
+        margin-right: 0 !important;
+        padding-left: 2px !important;
+        padding-right: 2px !important;
+    }
+        
+        /* Fix icon display in discount box on mobile */
+        .coupon-card .offer-action p i {
+            font-size: 18px !important;
+            margin-bottom: 2px;
+        }
+        
+        
+        
+        /* Adjust title size and spacing */
+        .coupon-card .offer-details h3,
+        .coupon-card h3 {
+            font-size: 14px !important; /* Increased from 11px to 14px */
+            margin-top: 5px !important;
+            margin-bottom: 3px !important;
+            line-height: 1.3 !important;
+            margin-right: 25px;
+        }
+        
+        /* Reduce meta spacing */
+        .coupon-card .offer-meta {
+            margin-top: 3px;
+        }
+        
+        /* Position button center bottom */
+        .coupon-card .button-deck {
+            float: none !important;
+            margin-top: 0 !important;
+            text-align: center;
+            width: 100%;
+            display: block;
+        }
+        
+        .coupon-card .offer-action {
+            text-align: center !important;
+            margin-top: 0;
+        }
+        
         .col-md-3.button-for-deal {
             justify-content: center;
         }
-        .coupon-card .offer-action {
-            text-align: center;
-        }
+        
         .buttons-tab {
             flex-grow: 1;
             text-align: center;
+            padding: 7px 5px; /* Reduced padding to fit */
+            font-size: 13px; /* Slightly smaller text */
+            white-space: nowrap;
         }
-        .d-flex.gap-3.align-items-center.mb-4 { flex-wrap: wrap; }
-        .modal-header { 
+        .d-flex.gap-3.align-items-center.mb-4 { 
+            flex-wrap: nowrap !important; /* Force single line */
+            gap: 5px !important; /* Reduce gap */
+            overflow-x: auto; /* Allow scrolling if needed, though flex-grow should handle it */
+        }
+        .modal-header {
             flex-wrap: wrap;
             padding: 0.5rem 1rem;
             justify-content: center !important;
@@ -414,34 +645,150 @@
         .coupon-modal .go-to-website a { padding: 0.75rem !important; font-size: 0.9rem; }
     }
     .coupon-modal .coupon-code {
-        font-size: 1.2rem;
+        font-size: 1.4rem;
         letter-spacing: 1px;
     }
+
+    @media (max-width: 767.98px) {
+        /* Button styling for mobile */
+        .coupon-card .reveal-code-button,
+        .coupon-card .deal-button {
+            margin-right: 4px !important;
+            margin-left: 10px !important;
+            font-size: 14px;
+            width: calc(100% - 20px) !important; /* specific width to account for margins */
+            min-width: unset !important;
+            max-width: unset !important;
+            display: block;
+            padding: 10px 4px;
+            line-height: 1.2;
+            white-space: normal;
+            word-wrap: break-word;
+            border-radius: 5px; /* Slight radius */
+        }
+        
+        /* Show line breaks on mobile - text in two lines */
+        .coupon-card .reveal-code-button br,
+        .coupon-card .deal-button br {
+            display: none !important; /* Changed to none for single line */
+        }
+        
+        /* Offer meta text size */
+        .coupon-card .offer-meta span {
+            font-size: 12px !important; /* Increased by 4px (from 8px) */
+        }
+        
+        /* Make verified and shipping text fit in one line on mobile */
+        .coupon-card .offer-meta {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: center;
+            gap: 2px;
+        }
+        
+        .coupon-card .offer-meta .mx-2 {
+            margin-left: 2px !important;
+            margin-right: 2px !important;
+        }
+        
+        .coupon-card .verified-text,
+        .coupon-card .shipping-text {
+            font-size: 12px !important; /* Increased by ~4px */
+        }
+        
+        /* Hide separator pipes on mobile to save space */
+        .coupon-card .offer-meta .mx-2 {
+            display: none !important;
+        }
+
+        /* Sidebar Reordering for Mobile */
+        .mobile-sidebar-flex {
+            display: flex;
+            flex-direction: column;
+        }
+        .mobile-order-first {
+            order: -1;
+        }
+        
+    }
+
+    
+
+        /* About Store Content Styling (match Blog) */
+        .about-store-content {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: #2d3748;
+            background-color: #fff;
+        }
+        .about-store-content p {
+            font-size: 1.125rem !important; /* 18px */
+            line-height: 1.9 !important;
+            color: #4a5568;
+            margin-bottom: 1.75rem;
+        }
+        .about-store-content h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-top: 2rem;
+            margin-bottom: 1.25rem;
+            border-left: 5px solid #cf5103;
+            padding-left: 1rem;
+        }
+        .about-store-content h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .about-store-content ul {
+            margin-bottom: 1.75rem;
+            padding-left: 2rem;
+            list-style-type: disc;
+        }
+        .about-store-content li {
+            font-size: 1.125rem;
+            color: #4a5568;
+            margin-bottom: 0.75rem;
+            line-height: 1.7;
+        }
+        .about-store-content table {
+            width: 100%;
+            margin-bottom: 0;
+            border-collapse: collapse;
+        }
+        .about-store-content table th,
+        .about-store-content table td {
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            vertical-align: top;
+        }
 </style>
 
 <div class="container py-3 px-md-2 px-3">
     <div class="row">
-        <div class="col-lg-3 col-md-4 my-auto">
+        <div class="col-4 col-lg-3 col-md-4 my-auto">
             <div class="d-block cursor-pointer">
                 @if($store->logo)
-                    <img src="{{ asset('uploads/' . $store->logo) }}" 
-                         
-                         style="height: 160px; object-fit: contain; border:1px dashed #ff4700; width:100%; border-radius:10px;" 
+                    <img src="{{ asset('uploads/' . $store->logo) }}"
+
+                         style="object-fit: contain; border:1px dashed #cf5103; width:100%; border-radius:10px;"
                          alt="{{ $store->title }} Logo">
                 @else
-                    <div class="mx-auto border border-secondary border-dashed rounded-md w-100 d-flex align-items-center justify-content-center" 
-                         style="height: 160px; object-fit: contain; border:1px dashed #ff4700; width:100%; border-radius:10px;">
+                    <div class="mx-auto border border-secondary border-dashed rounded-md w-100 d-flex align-items-center justify-content-center"
+                         style="object-fit: contain; border:1px dashed #cf5103; width:100%; border-radius:10px;">
                         <span class="text-muted">{{ $store->title }}</span>
                     </div>
                 @endif
             </div>
         </div>
-        <div class="col-lg-9 col-md-8 my-auto text-center text-md-start">
+        <div class="col-8 col-lg-9 col-md-8 my-auto text-center text-md-start">
             <div class="mt-3 mt-md-0">
                 <div class="">
-                    <h1 class="h2 mb-1" style="font-size:24px;font-weight:600;">{{ $store->title_h1 }} {{ date('Y') }}</h1>
-                    <h2 class="mb-2" style="font-size:16px;font-weight:500;color:#ff4700;">
-                        Best <span class="fw-semibold">{{ $offers->count() }}</span> {{ $store->title }} Offers & Promo Code last validated on <span>{{ date('F, Y') }}</span>
+                    <h1 class="h2 mb-1 resp-h1" style="font-size:24px;font-weight:600;">{{ $store->title_h1 }}, {{ date('Y') }}</h1>
+                    <h2 class="mb-2 resp-h2" style="font-size:16px;font-weight:500;color:#cf5103;">
+                       {{ $store->offers->count() }} {!! $store->subtitle_h2 !!} - {{ __(date('F')) }}, {{ date('Y') }}
                     </h2>
                 </div>
             </div>
@@ -451,60 +798,57 @@
 
 <div class="container py-3 px-md-2 px-3">
     <div class="row">
-        <div class="col-lg-3 col-md-4 sidebar">
+        <div class="col-lg-3 col-md-4 sidebar order-2 order-md-1 mobile-sidebar-flex">
             <div class="widget">
                 <div class="text-center mb-4">
-                       <p> We may earn a commission if you make a purchase through our links</p>
-                    <a href="/terms-of-use/" class="text-decoration-none">
+                       <p> {{ __('We may earn a commission if you make a purchase through our links') }}</p>
+                    <a href="{{ ($regionCode === 'us' || !$regionCode) ? route('home') : route('region.home', ['region' => $regionCode]) }}" class="text-decoration-none">
                         <div class="comission-btn" >
-                            We May Earn a Commission
+                            {{ __('We May Earn a Commission') }}
                         </div>
                     </a>
                 </div>
             </div>
 
             <div class="widget">
-                <h3 class="widget-title">Why Trust Us</h3>
+                <h3 class="widget-title">{{ __('Why Trust Us') }}</h3>
                 <p>
-                    {{ config('app.name', 'PocketThrift') }} has a merchandising team sourcing and verifying the best {{ $store->title }} coupons, promo codes, and deals so you can save money and time while shopping. Our deal hunters are constantly researching the market in real time to bring you the latest savings insights, the best stores to shop, and top product recommendations. No matter where you shop, you can trust {{ config('app.name', 'PocketThrift') }} to deliver reliable, vetted coupons, promo codes, and exclusive sales. Our team last verified offers for {{ $store->title }} on {{ date('F, Y') }}
+                    {{ __('Pocketthrift has a merchandising team sourcing and verifying the best :store_title coupons, promo codes, and deals so you can save money and time while shopping. Our deal hunters are constantly researching the market in real time to bring you the latest savings insights, the best stores to shop, and top product recommendations. No matter where you shop, you can trust Pocketthrift to deliver reliable, vetted coupons, promo codes, and exclusive sales. Our team last verified offers for :store_title on :date', ['store_title' => $store->title, 'date' => __(date('F')) . ', ' . date('Y')]) }}
                 </p>
-                <div class="comission-btn">
-                    Learn How We Verify Deals
-                </div>
             </div>
 
             <div class="widget widget-coupon">
-                <h3 class="widget-title ">Coupon Info</h3>
+                <h3 class="widget-title ">{{ __('Coupon Info') }}</h3>
                 <ul>
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        Number of Deal:
+                        {{ __('Number of Deal:') }}
                         <span class="badge">{{ $offers->count() }}</span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        Coupons:
+                        {{ __('Coupons:') }}
                         <span class="badge">{{ $offers->where('type', 'Code')->count() }}</span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        Offers:
+                        {{ __('Offers:') }}
                         <span class="badge">{{ $offers->where('type', '!=', 'Code')->count() }}</span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        Verified:
+                        {{ __('Verified:') }}
                         <span class="badge">{{ $offers->where('verified', '!=', 'active')->count() }}</span>
                     </li>
                 </ul>
             </div>
 
             <div class="widget">
-                <h3 class="widget-title">Last Updated</h3>
+                <h3 class="widget-title">{{ __('Last Updated') }}</h3>
                 <div class="mt-3">
                     <p class="text-sm border rounded-md bg-light p-2">
-                        <span class="fw-medium text-secondary">{{ $store->title }}</span> Coupons and Promo Codes last updated on <span>{{ date('F, Y') }}</span>
+                        <span class="fw-medium text-secondary">{{ $store->title }}</span> {{ __('Coupons and Promo Codes last updated on') }} <span>{{ __(date('F')) }}, {{ date('Y') }}</span>
                     </p>
                 </div>
             </div>
 
-            <div class="widget widget-content">
+            <!-- <div class="widget widget-content">
                 <h3 class="widget-title">Table of Content</h3>
                 <ul>
                     <li>
@@ -518,10 +862,10 @@
                         </a>
                     </li>
                 </ul>
-            </div>
+            </div> -->
 
             <div class="widget more-stores-widget">
-                <h3 class="widget-title">More Stores</h3>
+                <h3 class="widget-title">{{ __('More Stores') }}</h3>
                 <ul>
                     @php
                     // Fetch trending stores from the current region, ordered by the number of active offers
@@ -532,12 +876,12 @@
                         ->take(10) // Limit to top 10
                         ->get(); // Execute the query
                 @endphp
-                    
+
                     @foreach($otherStores as $otherStore)
                         <li >
-                            <a href="{{ route('store.detail', ltrim($otherStore->url_slug, '/')) }}" 
+                            <a href="{{ ($regionCode === 'us' || !$regionCode) ? route('store.detail', ltrim($otherStore->url_slug, '/')) : route('region.store.detail', ['region' => $regionCode, 'store' => ltrim($otherStore->url_slug, '/')]) }}"
                                class="text-sm text-decoration-none fw-medium">
-                               {{ $otherStore->title }} 
+                               {{ $otherStore->title }}
                                <span class="text-xs">({{ $otherStore->offers()->count() }})</span>
                             </a>
                         </li>
@@ -546,7 +890,7 @@
             </div>
 
            <div class="widget">
-                <h3 class="widget-title">Trending Stores</h3>
+                <h3 class="widget-title">{{ __('Trending Stores') }}</h3>
                 @php
                     // Fetch trending stores from the current region, ordered by the number of active offers
                     $trendingStores = \App\Models\Store::where('active', true)
@@ -558,13 +902,13 @@
                 @endphp
                 @foreach($trendingStores as $trendingStore)
                     <div class="mb-3">
-                        <a href="{{ route('store.detail', ltrim($trendingStore->url_slug, '/')) }}" 
+                        <a href="{{ ($regionCode === 'us' || !$regionCode) ? route('store.detail', ltrim($trendingStore->url_slug, '/')) : route('region.store.detail', ['region' => $regionCode, 'store' => ltrim($trendingStore->url_slug, '/')]) }}"
                            class="text-sm text-decoration-none">
                             <div class="d-flex gap-3 align-items-center mb-3">
                                 <div class="rounded bg-white shadow p-2 w-44 h-44 d-flex align-items-center justify-content-center">
                                     @if($trendingStore->logo)
-                                        <img src="{{ asset('uploads/' . $trendingStore->logo) }}" 
-                                             class="w-100" 
+                                        <img src="{{ asset('uploads/' . $trendingStore->logo) }}"
+                                             class="w-100"
                                              alt="{{ $trendingStore->title }} Logo"
                                              style="max-height: 44px;">
                                     @else
@@ -574,10 +918,10 @@
                                     @endif
                                 </div>
                                 <div class="">
-                                    <div class="trending-store-title">{{ $trendingStore->title }} Coupon Code</div>
+                                    <div class="trending-store-title">{{ $trendingStore->title }} {{ __('Coupon Code') }}</div>
                                     <div class="trending-store-data">
-                                        {{ $trendingStore->offers->where('type', 'Code')->count() }} 
-                                        Coupons & {{ $trendingStore->offers->where('type', '!=', 'Code')->count() }} Offers
+                                        {{ $trendingStore->offers->where('type', 'Code')->count() }}
+                                        {{ __('Coupons') }} & {{ $trendingStore->offers->where('type', '!=', 'Code')->count() }} {{ __('Offers') }}
                                     </div>
                                 </div>
                             </div>
@@ -585,132 +929,284 @@
                     </div>
                 @endforeach
             </div>
+
+                            
+
+ @if($store->contact_details && trim(strip_tags($store->contact_details)) !== '')
+            <div id="" class="mt-4 mobile-order-first">
+                <h3 class="widget-title">{{ __('Contact Details') }}</h3>
+                <div class="con-det">
+                    {!! $store->contact_details !!}
+                </div>
+            </div>
+            @endif
+
+
+
+
+                            
+                            @if(($store->play_store && trim($store->play_store) !== '') || ($store->app_store && trim($store->app_store) !== '') || ($store->socialLinks && $store->socialLinks->count() > 0))
+            <div class="mt-4 mobile-order-first">
+                    <h3 class="widget-title">{{ __('Follow Us') }}</h3>
+                <div class="border-end border-start border-bottom rounded-md p-3">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    @if($store->play_store && trim($store->play_store) !== '')
+                    <a href="{{ $store->play_store }}" target="_blank" class="follow-icons text-decoration-none">
+                        <i class="fa-brands fa-google-play"></i>
+                    </a>
+                    @endif
+                    @if($store->app_store && trim($store->app_store) !== '')
+                    <a href="{{ $store->app_store }}" target="_blank" class="follow-icons text-decoration-none">
+                        <i class="fa-brands fa-app-store-ios"></i>
+                    </a>
+                    @endif
+                    
+                    @if($store->socialLinks && $store->socialLinks->count() > 0)
+                        @foreach($store->socialLinks as $socialLink)
+                            @if($socialLink->socialApp && $socialLink->link)
+                            <a href="{{ $socialLink->link }}" target="_blank" class="follow-icons text-decoration-none" title="{{ $socialLink->socialApp->title }}">
+                                @if($socialLink->socialApp->logo)
+                                    <img src="{{ asset('uploads/' . $socialLink->socialApp->logo) }}" 
+                                         alt="{{ $socialLink->socialApp->title }}" 
+                                         style="width: 30px; height: 30px; object-fit: contain;">
+                                @else
+                                    <i class="fa-solid fa-link"></i>
+                                @endif
+                            </a>
+                            @endif
+                        @endforeach
+                    @endif
+                   
+                </div>
+                </div>
+            </div>
+            @endif
+
+
         </div>
 
-        <div class="col-lg-9 col-md-8 order-md-1 order-2">
+        
+
+        <div class="col-lg-9 col-md-8 order-1 order-md-2">
             <div class="d-flex gap-3 align-items-center mb-4">
                 <div class="buttons-tab active-tab-style"  data-filter="all">
-                    All ({{ $offers->count() }})
+                    {{ __('All') }} ({{ $offers->count() }})
                 </div>
                 <div class="buttons-tab " data-filter="codes">
-                    Codes ({{ $offers->where('type', 'Code')->count() }})
+                    {{ __('Codes') }} ({{ $offers->where('type', 'Code')->count() }})
                 </div>
                 <div class="buttons-tab" data-filter="deals">
-                    Deals ({{ $offers->where('type', '!=', 'Code')->count() }})
+                    {{ __('Deals') }} ({{ $offers->where('type', '!=', 'Code')->count() }})
                 </div>
             </div>
 
             @foreach($offers as $offer)
             <div class="coupon-card offer-item" data-type="{{ $offer->type }}">
-                <div class="row">
-                    <div class="col-md-2">
-                        <div class="store-logo mx-auto mx-md-0">
-                            @if($store->logo)
-                                <img src="{{ asset('uploads/' . $store->logo) }}" alt="{{ $store->title }} Logo">
-                            @else
-                                <span class="text-muted">{{ substr($store->title, 0, 1) }}</span>
-                            @endif
+            <div class="row align-items-center">
+                {{-- Remove the store logo --}}
+                <div class="col-2">
+                    <div class="offer-action">
+                        @php
+                            $isFreeShipping = in_array(trim(strtolower($offer->free_delivery)), ['1', 'true', 'active']);
+                            $isSpecialType = in_array(trim(strtolower($offer->type)), ['sale', 'offer']);
+                        @endphp
+
+                        @if($isFreeShipping)
+                            <p class="mb-2 fw-bold value">
+                                <i class="fa-solid fa-truck" style="font-size: 24px; margin-bottom: 2px;"></i>
+                                <span class="offers-text">
+                                    {{ __('FREE SHIPPING') }}
+                                </span>
+                            </p>
+                        @elseif(!empty($offer->discount))
+                            <p class="mb-2 fw-bold value">
+                                <span class="offers-text">
+                                    {!! str_ireplace('Get ', 'Get<br>', $offer->discount) !!}
+                                </span>
+                            </p>
+                        @elseif($isSpecialType)
+                            <p class="mb-2 fw-bold value">
+                                <i class="fa-solid fa-tag" style="font-size: 24px; margin-bottom: 2px;"></i>
+                                <span class="offers-text">
+                                    {{ (isset($offer->type) && trim(strtolower($offer->type)) == 'sale') ? __('SALE') : __('OFFER') }}
+                                </span>
+                            </p>
+                        @endif
+
+                            
                         </div>
-                    </div>
-                    <div class="col-md-7">
-                        <div class="offer-details">
-                            <div class="offer-meta d-flex align-items-center justify-content-center justify-content-md-start">
-                                <span style="font-weight: 600; color:#000;">{{ $offer->type }}</span>                                
+                    {{-- <div class="store-logo mx-auto">
+                        @if($store->logo)
+                        <img src="{{ asset('uploads/' . $store->logo) }}" alt="{{ $store->title }} Logo">
+                        @else
+                        <span class="text-muted">{{ substr($store->title, 0, 1) }}</span>
+                        @endif
+                    </div> --}}
+                </div>
+                <div class="col-8">
+                    <div class="offer-meta">
+                                <span style="font-size:12px;font-weight: 600; color:#000;">{{ __($offer->type) }}</span>
                                 @if(in_array(trim(strtolower($offer->verified)), ['active', '1', 'true']))
-                                    <span class="mx-2">|</span> <span style="font-weight: 600; padding: 2px 6px;color: #28a745; border:1px dashed #28a745">Verified</span>
+                                    <span class="mx-2">|</span> <span style="font-weight: 600; font-size:12px; padding: 2px 6px;color: #28a745; border:1px dashed #28a745"><i class="fa-solid fa-check"></i><span class="verified-text"> {{ __('Verified') }}</span></span>
                                 @endif
-                                @if(in_array(trim(strtolower($offer->free_delivery)), ['1', 'true', 'active']))
-                                    <span class="mx-2">|</span> <span style="font-weight: 600; padding: 2px 6px;color: #007bff; border:1px dashed #007bff">Free Delivery</span>
-                                @endif
+
                             </div>
-                            <h3>{{ $offer->title }}</h3>
-                            <span style="font-size:12px;">Recently Updated</span>
+                            <div>
+                            <h3 style="font-size: 16px; font-weight: 600; margin-top: 10px;">{{ $offer->title }}</h3>
+                            </div>
+                </div>
+                <div class="col-2">
+                    <div class="offer-details">
+                            
+                            
+                            <!-- <div style="font-size:12px; font-weight: 600; padding: 2px 6px;color: #003874; border:1px dashed #003874; width: max-content; float: right;">Recently Updated</div> -->
+                        
                         </div>
-                    </div>
-                    <div class="col-md-3 button-for-deal">
-                        <div class="offer-action text-center text-md-end">
-                            @if($offer->discount && trim($offer->discount) !== '')
-                                @if (is_numeric($offer->discount))
-                                    <p class="mb-2 fw-bold" style="color: #ee7b42; font-size: 1.2rem;">
-                                        @if($offer->type != 'Code') Up To @else Get @endif
-                                        {{ rtrim(rtrim(number_format(abs($offer->discount), 2), '0'), '.') }}%
-                                    </p>
-                                @elseif(stripos(strtolower($offer->discount), 'free shipping') !== false || stripos(strtolower($offer->discount), 'kostenloser ver') !== false || stripos(strtolower($offer->discount), 'spedizione grat') !== false)
-                                    <p class="mb-2 fw-bold" style="color: #ee7b42; font-size: 1.2rem;">Free Shipping</p>
-                                @elseif(stripos(strtolower($offer->discount), 'free delivery') !== false)
-                                    <p class="mb-2 fw-bold" style="color: #ee7b42; font-size: 1.2rem;">Free Delivery</p>
-                                @elseif(strtolower(trim($offer->discount)) == 'sign up')
-                                    <p class="mb-2 fw-bold" style="color: #ee7b42; font-size: 1.2rem;">Sign Up</p>
-                                @elseif(stripos(strtolower($offer->discount), 'sign up') !== false || stripos(strtolower($offer->discount), 'meldung') !== false || stripos(strtolower($offer->discount), 'iscrizione') !== false || stripos(strtolower($offer->discount), 'melden sie sich') !== false)
-                                    <p class="mb-2 fw-bold" style="color: #ee7b42; font-size: 1.2rem;">Sign Up</p>
-                                @elseif(stripos(strtolower($offer->discount), 'up to') !== false || preg_match('/^(-?)\d+%/', $offer->discount) || stripos($offer->discount, 'Bis zu') !== false || stripos($offer->discount, 'Fino al') !== false)
-                                    <p class="mb-2 fw-bold" style="color: #ee7b42; font-size: 1.2rem;">{{ $offer->discount }}</p>
-                                @else
-                                    <p class="mb-2 fw-bold" style="color: #ee7b42; font-size: 1.2rem;">{{ $offer->discount }}</p>
-                                @endif
-                            @else
-                                <p class="mb-2 fw-bold" style="color: #ee7b42; font-size: 1.2rem;">Special Offer</p>
-                            @endif
+                        <div class="button-deck" style="float: right; margin-top: 10px;">
                             @if($offer->type == 'Code')
-                                <button class="reveal-code-button" data-bs-toggle="modal" data-bs-target="#offerModal" data-offer-id="{{ $offer->id }}" data-offer-code="{{ $offer->button_text }}">REVEAL CODE</button>
+                                <button class="reveal-code-button" data-bs-toggle="modal" data-bs-target="#offerModal" data-offer-id="{{ $offer->id }}" data-offer-code="{{ $offer->button_text ? $offer->button_text : $offer->code }}">{{ __('REVEAL') }} <br>{{ __('CODE') }}</button>
                             @else
-                                <button class="deal-button" data-bs-toggle="modal" data-bs-target="#offerModal" data-offer-id="{{ $offer->id }}" data-offer-type="deal">GET DEAL</button>
+                                <button class="deal-button" data-bs-toggle="modal" data-bs-target="#offerModal" data-offer-id="{{ $offer->id }}" data-offer-type="deal">{{ __('GET') }} <br>{{ __('DEAL') }}</button>
                             @endif
                         </div>
                     </div>
                 </div>
             </div>
             @endforeach
-            
-            <div id="how-to-use" class="mt-4">
-                <h2 class="h5 fw-semibold text-white bg-primary rounded-md py-2 px-3" style="background-color: #002b61 !important;">
-                    How to Use {{ $store->title }} Promo Code
-                </h2>
-                <div class="border-end border-start border-bottom rounded-md p-3">
-                    <p class="mb-3">Follow the instructions below and get the best {{ $store->title }} Promo Code</p>
-                    <div class="mb-5">
-                        <div class="h6 fw-semibold mb-2">Step 1: Select and Reveal Your Coupon Code</div>
-                        <p class="text-base">Choose one of the available codes from the list above. To redeem it, click on 'Reveal Code' after selecting your preferred {{ $store->title }} Coupon Code</p>
-                        <img alt="Step 1" class="img-fluid" src="{{ asset('uploads/store-step-1.jpg') }}" title="Step 1">
-                    </div>
-                    <div class="border-bottom mb-4"></div>
-                    <div class="mb-5">
-                        <div class="h6 fw-semibold mb-2">Step 2: Copy Your Promo Code</div>
-                        <p class="text-base">Once you have clicked 'Reveal Code', copy the promo code that appears. This code is necessary for reducing part of the cost of your total order.</p>
-                        <img alt="Step 1" class="img-fluid" src="{{ asset('uploads/store-step-2.jpg') }}" title="Step 1">
-                    </div>
-                    <div class="mb-5">
-                        <div class="h6 fw-semibold mb-2">Step 3: Add Items to Your Basket</div>
-                        <p class="text-base">You will be redirected to the {{ $store->title }} website. Add the items you wish to purchase to your shopping basket and proceed to complete your order.</p>
-                    </div>
-                </div>
-            </div>
 
+            @if($store->content_body && trim(strip_tags($store->content_body)) !== '')
             <div id="reason-not-working" class="mt-4">
-                <h2 class="h5 fw-semibold text-white bg-primary rounded-md py-2 px-3" style="background-color: #002b61 !important;">
-                    Why is my <span>{{ $store->title }} Promo Code</span> Not Working?
+                <h2 class="h5 fw-semibold text-white bg-primary rounded-md py-2 px-3" style="background-color: #cf5103 !important;">
+                     <span class="fw-semibold">{{ __('About') }} {{ $store->title }} {{ __('Store') }}</span>
                 </h2>
-                <div class="border-end border-start border-bottom rounded-md p-3">
-                    <p class="text-base">A {{ $store->title }} Coupon Code may not work for several reasons:</p>
-                    <ul class="list-unstyled ps-3 my-3">
-                        <li class="mb-1">The code could have expired</li>
-                        <li>There are some items in your cart for which the code does not apply, such as sale items.</li>
-                        <li>Perhaps you have not bought enough to hit the limit necessary for its activation.</li>
-                        <li>If you experience any difficulties with your {{ $store->title }} Promo Code On {{ config('app.name', 'PocketThrift') }}, promptly get in touch, and we will solve this problem.</li>
-                    </ul>
+                <div class="border-end border-start border-bottom rounded-md p-3 about-store-content">
+                    {!! $store->content_body !!}
                 </div>
             </div>
+            @endif
 
-            <div class="bg-cover bg-no-repeat py-5 mt-4 rounded-lg" style="background-image: url('{{ asset('images/banner_02.jpg') }}');">
-                <div class="text-center relative z-10">
-                    <div class="h4 fw-bold text-white px-3">22 Jewelry and Watches Coupons & Promo Codes</div>
-                    <a href="/coupons/apps-and-software/" target="_blank" class="text-decoration-none">
-                        <div class="px-3 py-2 rounded-sm border border-white bg-transparent text-white text-uppercase text-sm mt-3 d-inline-block">
-                            View All Offers
-                        </div>
-                    </a>
+             @if($faqs->isNotEmpty())
+             <div id="faqs" class="mt-4">
+                <style>
+                    .faq-header {
+                        font-size: 24px;
+                        font-weight: 700;
+                        color: #cf5103;
+                        margin-bottom: 20px;
+                        text-transform: uppercase;
+                    }
+                    .faq-container {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 15px;
+                    }
+                    .faq-item {
+                        border: 1px solid #e0e0e0;
+                        border-radius: 8px;
+                        overflow: hidden;
+                        background: #fff;
+                    }
+                    .faq-question {
+                        padding: 15px 20px;
+                        font-size: 16px;
+                        font-weight: 600;
+                        color: #333;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        background: #f8f9fa;
+                        transition: background 0.3s ease;
+                    }
+                    .faq-question i {
+                        font-size: 14px;
+                        color: #cf5103;
+                        transition: transform 0.3s ease;
+                    }
+                    .faq-question.expanded {
+                        background: #cf5103;
+                        color: #fff;
+                    }
+                    .faq-question.expanded i {
+                        color: #fff;
+                    }
+                    .faq-content {
+                        max-height: 0;
+                        overflow: hidden;
+                        transition: max-height 0.3s ease-out, padding 0.3s ease;
+                        background: #fff;
+                    }
+                    .faq-content.show {
+                        max-height: 500px; /* Approximate max height */
+                        padding: 20px;
+                        border-top: 1px solid #e0e0e0;
+                    }
+                    .faq-content p {
+                        margin: 0;
+                        color: #555;
+                        line-height: 1.6;
+                    }
+                    .faq-question.collapsed{
+                        color: #fff;
+                    }
+                </style>
+
+                <div class="faq-header">
+                    FAQs
                 </div>
-            </div>
+
+                <div class="faq-container">
+                   @foreach($faqs as $faq)
+                       <div class="faq-item">
+                           <div class="faq-question collapsed" onclick="toggleFAQ(this)">
+                               <i class="fas fa-plus"></i>
+                               {{ $faq->question }}
+                           </div>
+                           <div class="faq-content">
+                               <div class="text-muted">
+                                   {!! $faq->answer !!}
+                               </div>
+                           </div>
+                       </div>
+                   @endforeach
+                </div>
+
+                <script>
+                    function toggleFAQ(element) {
+                        const question = element;
+                        const content = question.nextElementSibling;
+                        const icon = question.querySelector('i');
+
+                        // Close all other FAQ items
+                        document.querySelectorAll('.faq-question').forEach(q => {
+                            if (q !== question) {
+                                q.classList.remove('expanded');
+                                q.classList.add('collapsed');
+                                q.querySelector('i').classList.replace('fa-minus', 'fa-plus');
+                                q.nextElementSibling.classList.remove('show');
+                            }
+                        });
+
+                        // Toggle current FAQ
+                        if (question.classList.contains('collapsed')) {
+                            question.classList.remove('collapsed');
+                            question.classList.add('expanded');
+                            icon.classList.replace('fa-plus', 'fa-minus');
+                            content.classList.add('show');
+                        } else {
+                            question.classList.remove('expanded');
+                            question.classList.add('collapsed');
+                            icon.classList.replace('fa-minus', 'fa-plus');
+                            content.classList.remove('show');
+                        }
+                    }
+                </script>
+             </div>
+             @endif
+
+                          
+
+          
         </div>
     </div>
 </div>
@@ -720,13 +1216,13 @@
         <div class="container py-3">
             <ul class="list-unstyled d-flex align-items-center gap-2 mb-0">
                 <li class="d-flex align-items-center">
-                    <a href="{{ route('home') }}" class="text-decoration-none">Home</a>
+                    <a href="{{ ($regionCode === 'us' || !$regionCode) ? route('home') : route('region.home', ['region' => $regionCode]) }}" class="text-decoration-none">{{ __('Home') }}</a>
                     <svg fill="rgba(0,0,0,1)" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg">
                         <path d="M13.1717 12.0007L8.22192 7.05093L9.63614 5.63672L16.0001 12.0007L9.63614 18.3646L8.22192 16.9504L13.1717 12.0007Z"></path>
                     </svg>
                 </li>
                 <li class="d-flex align-items-center">
-                    <a href="{{ route('stores') }}" class="text-decoration-none">Store</a>
+                    <a href="{{ ($currentRegion === 'us' || !$currentRegion) ? route('stores') : route('region.stores', ['region' => $currentRegion]) }}" class="text-decoration-none">{{ __('Store') }}</a>
                     <svg fill="rgba(0,0,0,1)" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg">
                         <path d="M13.1717 12.0007L8.22192 7.05093L9.63614 5.63672L16.0001 12.0007L9.63614 18.3646L8.22192 16.9504L13.1717 12.0007Z"></path>
                     </svg>
@@ -743,48 +1239,31 @@
 <div class="modal fade coupon-modal" id="offerModal" tabindex="-1" aria-labelledby="offerModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-body p-0">
-                <div class="position-relative">
-                    <!-- Discount banner at the top -->
-                    <div class="discount-banner bg-primary text-white text-center py-3">
-                        <h3 id="discountValue" class="mb-0 fw-bold" style="font-size: 2rem; color: #ee7b42 !important;">15%</h3>
-                        <p id="discountText" class="mb-0" style="font-size: 1rem;">OFF</p>
+            <div class="modal-body p-4">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; top: 10px; right: 10px; background-color: #cf5103; border-radius: 50%; opacity: 1;"></button>
+                <div class="text-center">
+                    <h3 id="discountValue" class="mb-0 fw-bold" style="font-size: 2rem; color: ##cf5103!important;"></h3>
+                    <p id="discountText" class="mb-2" style="font-size: 1rem;"></p>
+                    <div class="store-logo-modal mb-3">
+                        <img id="modalStoreLogo" src="" alt="Store Logo" style="max-height: 120px; max-width: 120px; border: 1px dashed #cf5103; padding: 5px;">
                     </div>
-                    
-                    <!-- Modal header with store logo on right -->
-                    <div class="modal-header border-bottom-0 pb-1 justify-content-between">
-                        <h5 class="modal-title fw-bold" id="offerModalLabel" style="font-size: 1.2rem;"></h5>
-                        <button type="button" class="btn-close m-2" data-bs-dismiss="modal" aria-label="Close"></button>
-                        <div class="store-logo-modal ms-auto">
-                            <img id="modalStoreLogo" src="" alt="Store Logo" style="max-height: 50px; max-width: 80px;">
+                    <div class="coupon-code-container mb-3">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <span id="couponCode" class="coupon-code flex-grow-1 text-center p-3 bg-light border border-secondary rounded fw-bold">{{ __('Loading') }}...</span>
+                            <button id="copyCodeBtn" class="ms-2 copy-code-btn btn btn-primary">{{ __('Copy Code') }}</button>
                         </div>
                     </div>
-                    
-                    <!-- Offer details and code section -->
-                    <div class="modal-body-content px-4 pb-4">
-                        <div class="coupon-code-container mb-3">
-                            <div class="d-flex align-items-center justify-content-center">
-                                <span id="couponCode" class="coupon-code flex-grow-1 text-center p-3 bg-light border border-secondary rounded fw-bold">LOADING...</span>
-                                <button id="copyCodeBtn" class="ms-2 copy-code-btn btn btn-primary">COPY</button>
-                            </div>
-                        </div>
-                        
-                        <!-- Go to store button -->
-                        <div class="go-to-website mb-3">
-                            <a id="affiliateLink" href="#" target="_blank" class="btn btn-warning w-100 py-3 fw-bold text-dark">
-                                GO TO {{ $store->title }} STORE &rarr;
-                            </a>
-                        </div>
-                        
-                        <div class="verification-status mb-3">
-                            <span id="verifiedStatus" class="d-block text-center"></span>
-                        </div>
-                        
-                        <div class="detail-section mt-3">
-                            <h5 class="fw-bold">Details</h5>
-
-                            <ul id="offerDescription"></ul>
-                        </div>
+                    <div class="go-to-website mb-3">
+                        <a id="affiliateLink" href="#" target="_blank" class="fw-bold">
+                            {{ __('Go to :store_title Website', ['store_title' => $store->title]) }} &rarr;
+                        </a>
+                    </div>
+                    <div class="verification-status mb-3">
+                        <span id="verifiedStatus" class="d-block text-center"></span>
+                    </div>
+                    <div class="detail-section mt-3">
+                        <h5 class="fw-bold">{{ __('Details') }}</h5>
+                        <span id="offerDescription" class="list-unstyled text-center"></span>
                     </div>
                 </div>
             </div>
@@ -817,6 +1296,35 @@ document.addEventListener('DOMContentLoaded', function() {
         var button = event.relatedTarget;
         var offerId = button.getAttribute('data-offer-id');
         var offerType = button.getAttribute('data-offer-type'); // 'deal' for Get Deal, undefined for Reveal Code
+        var offerCode = button.getAttribute('data-offer-code');
+
+        // Auto-copy code if it's a "Reveal Code" button and code exists
+        if (offerType !== 'deal' && offerCode) {
+            if (navigator.clipboard && window.isSecureContext) {
+                 navigator.clipboard.writeText(offerCode).then(function() {
+                    console.log('Code auto-copied to clipboard');
+                }).catch(function(err) {
+                    console.error('Could not auto-copy text: ', err);
+                });
+            } else {
+                // Fallback for non-secure contexts (e.g. local HTTP)
+                let textArea = document.createElement("textarea");
+                textArea.value = offerCode;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-9999px";
+                textArea.style.top = "0";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    console.log('Code auto-copied to clipboard (fallback)');
+                } catch (err) {
+                    console.error('Fallback verify copy failed', err);
+                }
+                document.body.removeChild(textArea);
+            }
+        }
 
         // Fetch offer details via AJAX
         fetch(`/api/offer/${offerId}`)
@@ -828,10 +1336,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Set discount value at the top
                 var discountElement = offerModal.querySelector('#discountValue');
                 var discountTextElement = offerModal.querySelector('#discountText');
-                
+
                 if (offer.discount && offer.discount.trim() !== '') {
                     var discountLower = offer.discount.toLowerCase().trim();
-                    
+
                     if (isNumeric(offer.discount)) {
                         var discountValue = parseFloat(offer.discount);
                         discountElement.textContent = Math.abs(discountValue).toString();
@@ -854,12 +1362,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 } else {
                     discountElement.textContent = 'SPECIAL';
-                    discountTextElement.textContent = 'OFFER';
+                    discountTextElement.textContent = (offer.type && offer.type.toLowerCase().trim() === 'sale') ? 'SALE' : 'OFFER';
                 }
 
                 // Set offer title
-                offerModal.querySelector('#offerModalLabel').textContent = offer.title;
-                
+                offerModal.querySelector('#discountText').textContent = offer.title;
+
                 // Set store logo
                 var logoPath = store.logo || store.store_icon || '';
                 if (logoPath) {
@@ -872,20 +1380,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Set coupon code based on offer type
                 var couponCodeElement = offerModal.querySelector('#couponCode');
                 var couponCodeContainer = offerModal.querySelector('.coupon-code-container');
-                
+
                 if (offerType === 'deal') {
                     // For "Get Deal" offers, hide the coupon code section
                     couponCodeContainer.style.display = 'none';
                 } else {
                     // For "Reveal Code" offers, show the coupon code section
                     couponCodeContainer.style.display = 'block';
-                    
+
                     if (offer.button_text) {
                         couponCodeElement.textContent = offer.button_text;
                     } else if (offer.code) {
                         couponCodeElement.textContent = offer.code;
                     } else {
-                        couponCodeElement.textContent = 'NO CODE NEEDED';
+                        couponCodeElement.textContent = "{{ __('NO CODE NEEDED') }}";
                     }
                 }
 
@@ -897,15 +1405,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     affiliateLinkElement.href = offer.button_link;
                 } else {
                     affiliateLinkElement.href = '#';
-                    affiliateLinkElement.textContent = 'LINK NOT AVAILABLE';
+                    affiliateLinkElement.textContent = "{{ __('LINK NOT AVAILABLE') }}";
                 }
 
                 // Set verification status
                 var verifiedStatus = offerModal.querySelector('#verifiedStatus');
                 if (offer.verified === 'active') {
-                    verifiedStatus.innerHTML = 'Verified <i class="fas fa-check-circle text-success"></i> | Valid Till: N/A';
+                    verifiedStatus.innerHTML = "{{ __('Verified') }} <i class=\"fas fa-check-circle text-success\"></i> | {{ __('Valid Till') }}: N/A";
                 } else {
-                    verifiedStatus.innerHTML = 'Not Verified | Valid Till: N/A';
+                   
                 }
 
                 // Set offer description
@@ -989,12 +1497,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 offerModal.querySelector('#verifiedStatus').innerHTML = 'Error loading offer details';
             });
     });
-    
+
     // Helper function to check if value is numeric
     function isNumeric(value) {
         return !isNaN(parseFloat(value)) && isFinite(value);
     }
-    
+
     // Helper function to convert to lowercase safely
     function toLowerCase(value) {
         if (typeof value === 'string' || value instanceof String) {
@@ -1002,6 +1510,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return '';
     }
+
+    // Wrap tables in the about-store-content section for mobile responsiveness
+    const storeTables = document.querySelectorAll('.about-store-content table');
+    storeTables.forEach(table => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'table-responsive-wrapper';
+        wrapper.style.overflowX = 'auto';
+        wrapper.style.webkitOverflowScrolling = 'touch';
+        wrapper.style.marginBottom = '1.5rem';
+        
+        table.parentNode.insertBefore(wrapper, table);
+        wrapper.appendChild(table);
+    });
 });
 </script>
 

@@ -19976,8 +19976,9 @@ textarea.form-control {
   .modal-fill .modal-content {
     background: rgba(255, 255, 255, 0.97);
     width: 100%;
-    max-width: 600px;
+    /* max-width: 600px; */
     box-shadow: none; }
+    
   .modal-fill .modal-header {
     border-bottom: none; }
     .modal-fill .modal-header .close {
@@ -20072,6 +20073,13 @@ textarea.form-control {
     display: block; }
   .flexbox .dropdown a i {
     font-size: 1rem; }
+
+    
+      .login-panel {
+    background: #ffffffbf;
+    border: 2px dashed #fb6713;
+}
+    
 
 .no-shrink {
   flex-shrink: 0; }

@@ -20,8 +20,8 @@ class CheckRegionUser
         if (Auth::check()) {
             $user = Auth::user();
             
-            // Allow if user is regular admin (role 1)
-            if ($user->role == 1) {
+            // Allow if user has role 0, 1, or 2, OR has Spatie roles
+            if (in_array($user->role, [0, 1, 2]) || $user->hasRole('admin') || $user->hasRole('super admin')) {
                 return $next($request);
             }
             

@@ -1,4 +1,6 @@
 @extends('layouts.app')
+@section('title', $page->seo_title)
+@section('meta_description', $page->meta_description)
 @php
     $regionService = app(\App\Services\RegionService::class);
     $currentRegion = $regionService->getCurrentRegion();
@@ -10,17 +12,12 @@
     $baseUrl = url($regionPrefix . '/contact-us');
 @endphp
 @push('schemas')
-<title>PocketThrift {{ $country }}: Guides, Reviews, Coupons & Insights</title>
-
-<meta name="description"
-      content="Save money with PocketThrift {{ $country }}! Discover the latest guides, product reviews, and exclusive coupons for valuable insights and smart shopping decisions!">
-
 <meta name="robots" content="index, follow">
 
 {{-- OG TAGS --}}
-<meta property="og:title" content="PocketThrift {{ $country }}: Guides, Reviews, Coupons & Insights">
+<meta property="og:title" content="{{ $page->seo_title }}">
 <meta property="og:description"
-      content="Save money with PocketThrift {{ $country }}! Discover the latest guides, product reviews, and exclusive coupons for valuable insights and smart shopping decisions!">
+      content="{{ $page->meta_description }}">
 <meta property="og:url" content="{{ $baseUrl }}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://pocketthrift.com/images/og-image.webp">
@@ -31,13 +28,10 @@
 {{-- TWITTER TAGS --}}
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@pocketthrift">
-<meta name="twitter:title" content="PocketThrift {{ $country }}: Guides, Reviews, Coupons & Insights">
+<meta name="twitter:title" content="{{ $page->seo_title }}">
 <meta name="twitter:description"
-      content="Save money with PocketThrift {{ $country }}! Discover the latest guides, product reviews, and exclusive coupons for valuable insights and smart shopping decisions!">
+      content="{{ $page->meta_description }}">
 <meta name="twitter:image" content="https://pocketthrift.com/images/og-image.webp">
-
-{{-- CANONICAL --}}
-<link rel="canonical" href="{{ $baseUrl }}">
 @php
     // Get region code from multiple sources
     $regionCode = $region->code ?? ($regionCode ?? null);
@@ -61,8 +55,6 @@
     // This is the correct regionized home URL
     $siteUrl = ($regionCode === 'us') ? $baseUrl : $baseUrl . '/' . $regionCode;
 
-    $title = $meta['title'] ?? $page->name ?? 'Contact Us';
-    $description = $meta['description'] ?? $page->meta_description ?? 'Get in touch with Pocketthrift through our Contact Us page. Find our contact details, submit inquiries, and connect with our team for assistance.';
     $path = $meta['path'] ?? request()->getPathInfo();
     
     // Remove region code from path if it exists to avoid duplication
@@ -77,7 +69,7 @@
     // INITIALIZE BREADCRUMBS
     $breadcrumbs = $meta['breadcrumbs'] ?? [
         ['name'=>'Home', 'url'=>$siteUrl],
-        ['name'=>$title, 'url'=>$pathWithoutRegion]
+        ['name'=>$page->title, 'url'=>$pathWithoutRegion]
     ];
 
     // 🔥 FIX: FORCE HOME URL TO INCLUDE REGION
@@ -88,7 +80,7 @@
     } else {
         $breadcrumbs = [
             ['name'=>'Home','url'=>$siteUrl],
-            ['name'=>$title,'url'=>$pathWithoutRegion]
+            ['name'=>$page->title,'url'=>$pathWithoutRegion]
         ];
     }
 @endphp
@@ -97,8 +89,8 @@
     $webpage = [
         "@context"=>"https://schema.org/",
         "@type"=>"WebPage",
-        "name"=>$title,
-        "description"=>$description,
+        "name"=>"Contact Us",
+        "description"=>$page->meta_description,
         "url"=>$fullUrl,
         "publisher"=>[
             "@type"=>"Organization",
@@ -110,36 +102,23 @@
         ]
     ];
 
-    $crumbItems = [];
-    $pos = 1;
-
-    foreach($breadcrumbs as $b){
-        // Special handling for Home breadcrumb - always use $siteUrl
-        if($pos === 1 || strtolower($b['name']) === 'home' || strtolower($b['name']) === 'inicio'){
-            $url = $siteUrl;
+    // Prepare BreadcrumbList schema
+        $crumbItems = [];
+        $pos = 1;
+        foreach ($breadcrumbs as $b) {
+            $url = strpos($b['url'], 'http') === 0 ? $b['url'] : rtrim($siteUrl, '/') . '/' . ltrim($b['url'], '/');
+            $crumbItems[] = [
+                '@type' => 'ListItem',
+                'position' => $pos++,
+                'name' => $b['name'],
+                'item' => $url,
+            ];
         }
-        // If the URL is already absolute (starts with http)
-        elseif(strpos($b['url'],'http') === 0){
-            $url = $b['url'];
-        }
-        // If the URL is relative, prepend the regionalized site URL
-        else {
-            $url = rtrim($siteUrl,'/') . '/' . ltrim($b['url'],'/');
-        }
-
-        $crumbItems[] = [
-            "@type"=>"ListItem",
-            "position"=>$pos++,
-            "name"=>$b['name'],
-            "item"=>$url
+        $breadcrumbSchema = [
+            '@context' => 'https://schema.org/',
+            '@type' => 'BreadcrumbList',
+            'itemListElement' => $crumbItems,
         ];
-    }
-
-    $breadcrumbSchema = [
-        "@context"=>"https://schema.org/",
-        "@type"=>"BreadcrumbList",
-        "itemListElement"=>$crumbItems
-    ];
 @endphp
 
 <script type="application/ld+json">
@@ -156,15 +135,15 @@
     <div class="row justify-content-center">
         <div class="col-lg-10">
             <div class="card shadow-lg border-0">
-                <div class="card-header bg-primary text-white text-center py-4" style="background-color: #002c61 !important;">
-                    <h2 class="mb-0">Contact Us</h2>
-                    <p class="mb-0">We'd love to hear from you! Get in touch with us.</p>
+                <div class="card-header bg-primary text-white text-center py-4" style="background-color: #cf5103 !important;">
+                    <h1 class="mb-0">{{ __('Contact Us') }}</h1>
+                    <p class="mb-0">{{ __("We'd love to hear from you! Get in touch with us.") }}</p>
                 </div>
                 <div class="card-body p-5">
                     <div class="row">
                         <div class="col-md-6 mb-4 mb-md-0">
-                            <h4 class="mb-4">Get In Touch</h4>
-                            <p class="text-muted mb-4">Fill out the form to send us a message. Our team will get back to you within 24 hours.</p>
+                            <h4 class="mb-4">{{ __('Get In Touch') }}</h4>
+                            <p class="text-muted mb-4">{{ __('Fill out the form to send us a message. Our team will get back to you within 24 hours.') }}</p>
                             
                             <div class="contact-info">
                                 <div class="d-flex mb-3">
@@ -172,8 +151,8 @@
                                         <i class="fas fa-map-marker-alt text-primary" style="font-size: 1.2rem;"></i>
                                     </div>
                                     <div>
-                                        <h6 class="mb-1">Address</h6>
-                                        <p class="mb-0 text-muted">123 Business Street, City, Country</p>
+                                        <h6 class="mb-1">{{ __('Address') }}</h6>
+                                        <p class="mb-0 text-muted">U10, 14-16 Weigand Avenue, Bankstown, New South Wales 2200  Sydney, Australia</p>
                                     </div>
                                 </div>
                                 
@@ -182,8 +161,8 @@
                                         <i class="fas fa-phone text-primary" style="font-size: 1.2rem;"></i>
                                     </div>
                                     <div>
-                                        <h6 class="mb-1">Phone</h6>
-                                        <p class="mb-0 text-muted">+1 (123) 456-7890</p>
+                                        <h6 class="mb-1">{{ __('Phone') }}</h6>
+                                        <p class="mb-0 text-muted "><a href="tel:+61414573000" class="text-decoration-none">+61 414 573 000</a></p>
                                     </div>
                                 </div>
                                 
@@ -192,79 +171,56 @@
                                         <i class="fas fa-envelope text-primary" style="font-size: 1.2rem;"></i>
                                     </div>
                                     <div>
-                                        <h6 class="mb-1">Email</h6>
-                                        <p class="mb-0 text-muted">info@pocketthrift.com</p>
-                                    </div>
-                                </div>
-                                
-                                <div class="d-flex">
-                                    <div class="contact-icon me-3">
-                                        <i class="fas fa-clock text-primary" style="font-size: 1.2rem;"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-1">Working Hours</h6>
-                                        <p class="mb-0 text-muted">Mon-Fri: 9AM - 6PM</p>
+                                        <h6 class="mb-1">{{ __('Email') }}</h6>
+                                        <p class="mb-0 text-muted"><a href="mailto:contact@pocketthrift.com" class="text-decoration-none">contact@pocketthrift.com</a></p>
+                                        <p class="mb-0 text-muted"><a href="mailto:info@pocketthrift.com" class="text-decoration-none">info@pocketthrift.com</a></p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="col-md-6">
-                            <form id="contactForm" action="{{ route('contactUs.store') }}" method="POST">
-                                @csrf
-                                <div class="mb-4">
-                                    <label for="name" class="form-label fw-bold">Full Name</label>
-                                    <input type="text" class="form-control" id="name" name="name" placeholder="Enter your name" required value="{{ old('name') }}">
-                                    @error('name')
-                                        <div class="text-danger mt-1">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                
-                                <div class="mb-4">
-                                    <label for="email" class="form-label fw-bold">Email Address</label>
-                                    <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required value="{{ old('email') }}">
-                                    @error('email')
-                                        <div class="text-danger mt-1">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                
-                                <div class="mb-4">
-                                    <label for="subject" class="form-label fw-bold">Subject</label>
-                                    <input type="text" class="form-control" id="subject" name="subject" placeholder="Enter subject" required value="{{ old('subject') }}">
-                                    @error('subject')
-                                        <div class="text-danger mt-1">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                
-                                <div class="mb-4">
-                                    <label for="message" class="form-label fw-bold">Message</label>
-                                    <textarea class="form-control" id="message" name="message" rows="5" placeholder="Enter your message" required>{{ old('message') }}</textarea>
-                                    @error('message')
-                                        <div class="text-danger mt-1">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                
-                                <button type="submit" class="btn btn-primary w-100" style="background-color: #002c61; border-color: #002c61;">Send Message</button>
-                            </form>
+<form id="contactForm" action="{{ route('contactUs.store') }}" method="POST">
+@csrf
+<div class="mb-4">
+<label for="name" class="form-label fw-bold">{{ __('Full Name') }}</label>
+<input type="text" class="form-control" id="name" name="name" placeholder="{{ __('Enter your name') }}" required value="{{ old('name') }}">
+@error('name')
+<div class="text-danger mt-1">{{ $message }}</div>
+@enderror
+</div>
+
+<div class="mb-4">
+<label for="email" class="form-label fw-bold">{{ __('Email Address') }}</label>
+<input type="email" class="form-control" id="email" name="email" placeholder="{{ __('Enter your email') }}" required value="{{ old('email') }}">
+@error('email')
+<div class="text-danger mt-1">{{ $message }}</div>
+@enderror
+</div>
+
+<div class="mb-4">
+<label for="subject" class="form-label fw-bold">{{ __('Subject') }}</label>
+<input type="text" class="form-control" id="subject" name="subject" placeholder="{{ __('Enter subject') }}" required value="{{ old('subject') }}">
+@error('subject')
+<div class="text-danger mt-1">{{ $message }}</div>
+@enderror
+</div>
+
+<div class="mb-4">
+<label for="message" class="form-label fw-bold">{{ __('Message') }}</label>
+<textarea class="form-control" id="message" name="message" rows="5" placeholder="{{ __('Enter your message') }}" required>{{ old('message') }}</textarea>
+@error('message')
+<div class="text-danger mt-1">{{ $message }}</div>
+@enderror
+</div>
+
+<button type="submit" class="btn btn-primary w-100" style="background-color: #cf5103; border-color: #cf5103;">{{ __('Send Message') }}</button>
+</form>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
-
-<!-- Google Maps Section -->
-<div class="container-fluid px-0">
-    <div class="map-container">
-        <!-- Google Maps Embed (Placeholder) -->
-        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3024.1234567890123!2d-74.0059413!3d40.7127753!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDDCsDQyJzQ2LjAiTiA3NMKwMDAnMjEuNCJX!5e0!3m2!1sen!2sus!4v1234567890123" 
-                width="100%" 
-                height="400" 
-                style="border:0;" 
-                allowfullscreen="" 
-                loading="lazy">
-        </iframe>
     </div>
 </div>
 
@@ -274,13 +230,13 @@
         <div class="container py-3">
             <ul class="list-unstyled d-flex align-items-center gap-2 mb-0">
                 <li class="d-flex align-items-center">
-                    <a href="{{ route('home') }}" class="text-decoration-none">Home</a>
+                    <a href="{{ ($regionCode === 'us' || !$regionCode) ? route('home') : route('region.home', ['region' => $regionCode]) }}" class="text-decoration-none">{{ __('Home') }}</a>
                     <svg fill="rgba(0,0,0,1)" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg">
                         <path d="M13.1717 12.0007L8.22192 7.05093L9.63614 5.63672L16.0001 12.0007L9.63614 18.3646L8.22192 16.9504L13.1717 12.0007Z"></path>
                     </svg>
                 </li>
                 <li class="d-flex align-items-center">
-                    <span class="fw-semibold">Contact Us</span>
+                    <span class="fw-semibold">{{ __('Contact Us') }}</span>
                 </li>
             </ul>
         </div>
@@ -290,7 +246,7 @@
 </div>
 @endsection
 
-@section('styles')
+@push('css')
 <style>
     .contact-icon {
         min-width: 30px;
@@ -320,7 +276,7 @@
     }
     
     .form-control:focus {
-        border-color: #002c61;
+        border-color: #cf5103;
         box-shadow: 0 0 0 0.2rem rgba(0, 44, 97, 0.25);
     }
     
@@ -336,9 +292,9 @@
         box-shadow: 0 4px 15px rgba(0, 44, 97, 0.3);
     }
 </style>
-@endsection
+@endpush
 
-@section('scripts')
+@push('js')
 <script>
     document.getElementById('contactForm').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -346,7 +302,7 @@
         // Show loading state
         const submitBtn = this.querySelector('button[type="submit"]');
         const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Sending...';
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> ' + "{{ __('Sending...') }}";
         submitBtn.disabled = true;
         
         // Create form data object
@@ -372,7 +328,7 @@
                 this.reset();
             } else {
                 // Handle errors
-                alert('There was an error sending your message. Please try again.');
+                alert("{{ __('There was an error sending your message. Please try again.') }}");
             }
         })
         .catch(error => {
@@ -381,9 +337,9 @@
             submitBtn.disabled = false;
             
             console.error('Error:', error);
-            alert('There was an error sending your message. Please try again.');
+            alert("{{ __('There was an error sending your message. Please try again.') }}");
         });
     });
 </script>
 
-@endsection
+@endpush

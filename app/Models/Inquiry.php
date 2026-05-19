@@ -13,9 +13,8 @@ class Inquiry extends Model
 
     protected $table = 'inquiries';
 
-    protected function getData($value)
-    {
-    }
-
+    protected $casts = [
+        'data' => 'array',
+    ];
 
 }

@@ -75,14 +75,14 @@
                                     @enderror
                                 </div>
                                 
-                                <div class="form-group mb-3">
+                                <!-- <div class="form-group mb-3">
                                     <label for="logo" class="form-label">Logo</label>
                                     <input type="text" name="logo" id="logo" class="form-control" value="{{ old('logo') }}">
                                     <small class="form-text text-muted">Logo filename</small>
                                     @error('logo')
                                         <div class="text-danger">{{ $message }}</div>
                                     @enderror
-                                </div>
+                                </div> -->
                                 
                                 <div class="form-group mb-3">
                                     <label for="image_alt" class="form-label">Image Alt Text</label>
@@ -110,27 +110,24 @@
                                         <div class="text-danger">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                
-                                <div class="form-group mb-3">
-                                    <label for="start_date" class="form-label">Start Date</label>
-                                    <input type="date" name="start_date" id="start_date" class="form-control" value="{{ old('start_date') }}">
-                                    @error('start_date')
-                                        <div class="text-danger">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                
-                                <div class="form-group mb-3">
-                                    <label for="end_date" class="form-label">End Date</label>
-                                    <input type="date" name="end_date" id="end_date" class="form-control" value="{{ old('end_date') }}">
-                                    @error('end_date')
-                                        <div class="text-danger">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                
-                                <div class="form-group mb-3">
+                                 
+                                 <div class="form-group mb-3">
                                     <label for="meta_robots" class="form-label">Meta Robots</label>
-                                    <input type="text" name="meta_robots" id="meta_robots" class="form-control" value="{{ old('meta_robots') }}">
-                                    <small class="form-text text-muted">e.g., index, follow</small>
+                                    <select name="meta_robots" id="meta_robots" class="form-control @error('meta_robots') is-invalid @enderror">
+                                        <option value="Index, Follow" {{ old('meta_robots') == 'Index, Follow' ? 'selected' : '' }}>
+                                            Index, Follow
+                                        </option>
+                                        <option value="Noindex, Follow" {{ old('meta_robots') == 'Noindex, Follow' ? 'selected' : '' }}>
+                                            Noindex, Follow
+                                        </option>
+                                        <option value="Index, Nofollow" {{ old('meta_robots') == 'Index, Nofollow' ? 'selected' : '' }}>
+                                            Index, Nofollow
+                                        </option>
+                                        <option value="Noindex, Nofollow" {{ old('meta_robots') == 'Noindex, Nofollow' ? 'selected' : '' }}>
+                                            Noindex, Nofollow
+                                        </option>
+                                    </select>
+                                    <small class="form-text text-muted">Select Meta Robots option</small>
                                     @error('meta_robots')
                                         <div class="text-danger">{{ $message }}</div>
                                     @enderror
@@ -188,7 +185,7 @@
                                 
                                 <div class="form-group mb-3">
                                     <label for="content_body" class="form-label">Content Body</label>
-                                    <textarea name="content_body" id="content_body" class="form-control summernote editor" rows="10">{{ old('content_body') }}</textarea>
+                                    <textarea name="content_body" id="content_body" class="editor" rows="10">{{ old('content_body') }}</textarea>
                                     @error('content_body')
                                         <div class="text-danger">{{ $message }}</div>
                                     @enderror
@@ -208,6 +205,33 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- FAQs Section -->
+                        <div class="card mt-4 mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title">FAQs</h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- FAQ Form for adding multiple FAQs -->
+                                <div id="faq-container">
+                                    <div class="faq-entry mb-3">
+                                        <div class="row">
+                                            <div class="col-md-5">
+                                                <input type="text" name="faq_question[]" class="form-control" placeholder="FAQ Question">
+                                            </div>
+                                            <div class="col-md-5">
+                                                <input type="text" name="faq_answer[]" class="form-control" placeholder="FAQ Answer">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <input type="number" name="faq_sort[]" class="form-control" placeholder="Sort" value="0">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button type="button" class="btn btn-sm btn-success" id="add-faq">Add Another FAQ</button>
+                            </div>
+                        </div>
                         
                         <div class="d-flex justify-content-between">
                             <a href="{{ route('admin.blog.index') }}" class="btn btn-secondary">Cancel</a>
@@ -221,17 +245,43 @@
 </div>
 @endsection
 
-@section('scripts')
+@push('js')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Auto-generate slug from title
-    document.getElementById('title').addEventListener('input', function() {
-        const title = this.value;
-        const slug = title.toLowerCase()
-            .replace(/[^\w ]+/g, '')
-            .replace(/ +/g, '-');
-        document.getElementById('url_slug').value = slug;
+$(document).ready(function() {
+    // Initialize Select2 for category dropdown
+    $('#category_id').select2({
+        placeholder: 'Select Category',
+        allowClear: true,
+        width: '100%'
+    });
+    
+    // Add FAQ functionality
+    $('#add-faq').on('click', function(e) {
+        e.preventDefault();
+        
+        var newFaqHtml = '<div class="faq-entry mb-3">' +
+            '<div class="row">' +
+            '<div class="col-md-5">' +
+                '<input type="text" name="faq_question[]" class="form-control" placeholder="FAQ Question">' +
+            '</div>' +
+            '<div class="col-md-5">' +
+                '<input type="text" name="faq_answer[]" class="form-control" placeholder="FAQ Answer">' +
+            '</div>' +
+            '<div class="col-md-2">' +
+                '<input type="number" name="faq_sort[]" class="form-control" placeholder="Sort" value="0">' +
+                '<button type="button" class="btn btn-sm btn-danger remove-faq mt-1">Remove</button>' +
+            '</div>' +
+        '</div>' +
+        '</div>';
+        
+        $('#faq-container').append(newFaqHtml);
+    });
+    
+    // Use event delegation for remove buttons
+    $(document).on('click', '.remove-faq', function(e) {
+        e.preventDefault();
+        $(this).closest('.faq-entry').remove();
     });
 });
 </script>
-@endsection
+@endpush

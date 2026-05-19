@@ -34,8 +34,8 @@
                 <div class="card-body">
                     <!-- Stats Cards -->
                     <div class="row">
-                        <div class="col-xl-4 col-12">
-                            <div class="card bg-info-gradient">
+                        <div class="col-xl-3 col-12">
+                            <div class="card bg-primary">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between">
                                         <div>
@@ -50,7 +50,7 @@
                             </div>
                         </div>
 
-                        <div class="col-xl-4 col-12">
+                        <div class="col-xl-3 col-12">
                             <div class="card bg-success">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between">
@@ -66,7 +66,7 @@
                             </div>
                         </div>
 
-                        <div class="col-xl-4 col-12">
+                        <div class="col-xl-3 col-12">
                             <div class="card bg-warning">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between">
@@ -76,6 +76,22 @@
                                         </div>
                                         <div class="align-self-center">
                                             <i class="fa-solid fa-percent text-white" style="font-size: 36px;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-12">
+                            <div class="card bg-danger">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="text-uppercase text-white mt-0">Blogs</h6>
+                                            <h2 class="text-white mb-0">{{ $blogsCount }}</h2>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fa-solid fa-blog text-white" style="font-size: 36px;"></i>
                                         </div>
                                     </div>
                                 </div>
@@ -93,7 +109,7 @@
                         </div>
                         
                         <!-- Trending Stores -->
-                        <div class="col-lg-4">
+                        <div class="col-lg-3">
                             <div class="card">
                                 <div class="card-header">
                                     <h5 class="card-title mb-0">Trending Stores</h5>
@@ -128,7 +144,7 @@
                         </div>
 
                         <!-- Trending Categories -->
-                        <div class="col-lg-4">
+                        <div class="col-lg-3">
                             <div class="card">
                                 <div class="card-header">
                                     <h5 class="card-title mb-0">Trending Categories</h5>
@@ -163,7 +179,7 @@
                         </div>
 
                         <!-- Trending Offers -->
-                        <div class="col-lg-4">
+                        <div class="col-lg-3">
                             <div class="card">
                                 <div class="card-header">
                                     <h5 class="card-title mb-0">Trending Offers</h5>
@@ -196,12 +212,47 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Trending Blogs -->
+                        <div class="col-lg-3">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Trending Blogs</h5>
+                                </div>
+                                <div class="card-body">
+                                    @if($trendingBlogs->count() > 0)
+                                        <div class="table-responsive">
+                                            <table class="table table-centered table-nowrap mb-0">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>#</th>
+                                                        <th>Blog</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($trendingBlogs as $index => $blog)
+                                                        <tr>
+                                                            <td><span class="badge bg-primary">{{ $index + 1 }}</span></td>
+                                                            <td>
+                                                                <a href="{{ route('admin.blog.show', $blog->id) }}" class="text-body fw-bold">{{ Str::limit($blog->title, 20) }}</a>
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    @else
+                                        <p class="text-muted mb-0">No trending blogs selected</p>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Recent Items Section -->
                     <div class="row mt-4">
                         <!-- Recent Stores -->
-                        <div class="col-lg-4">
+                        <div class="col-lg-3">
                             <div class="card">
                                 <div class="card-header">
                                     <h5 class="card-title mb-0">Recent Stores</h5>
@@ -240,7 +291,7 @@
                         </div>
 
                         <!-- Recent Categories -->
-                        <div class="col-lg-4">
+                        <div class="col-lg-3">
                             <div class="card">
                                 <div class="card-header">
                                     <h5 class="card-title mb-0">Recent Categories</h5>
@@ -279,7 +330,7 @@
                         </div>
 
                         <!-- Recent Offers -->
-                        <div class="col-lg-4">
+                        <div class="col-lg-3">
                             <div class="card">
                                 <div class="card-header">
                                     <h5 class="card-title mb-0">Recent Offers</h5>
@@ -321,6 +372,45 @@
                                         </div>
                                     @else
                                         <p class="text-muted mb-0">No offers found</p>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Blogs -->
+                        <div class="col-lg-3">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Recent Blogs</h5>
+                                </div>
+                                <div class="card-body">
+                                    @if($recentBlogs->count() > 0)
+                                        <div class="table-responsive">
+                                            <table class="table table-centered table-nowrap mb-0">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Title</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($recentBlogs as $blog)
+                                                        <tr>
+                                                            <td>
+                                                                <a href="{{ route('admin.blog.show', $blog->id) }}" class="text-body fw-bold">{{ Str::limit($blog->title, 20) }}</a>
+                                                            </td>
+                                                            <td>
+                                                                <span class="badge {{ $blog->active ? 'badge-success' : 'badge-danger' }}">
+                                                                    {{ $blog->active ? 'Active' : 'Inactive' }}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    @else
+                                        <p class="text-muted mb-0">No blogs found</p>
                                     @endif
                                 </div>
                             </div>

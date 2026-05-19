@@ -1,96 +1,114 @@
 @extends('admin.layouts.app')
-@section('title', 'Add Banner')
-@section('content')
-<div class="container-full">
-	<div class="content-header">
-	    <div class="d-flex align-items-center">
-	        <div class="mr-auto">
-	            <h3 class="page-title">{{ $data == null ? 'Add' : 'Update ' }} Banner {{ $data == null ? '' :'#'.$data->id }}</h3>
-	            <div class="d-inline-block align-items-center">
-	                <nav>
-	                    <ol class="breadcrumb">
-	                        <li class="breadcrumb-item">
-	                        	<a href="#"><i class="mdi mdi-home-outline">Banner Management</i></a>
-	                        </li>
-	                        <li class="breadcrumb-item active" aria-current="page">{{ $data == null ? 'Add' : 'Update ' }} Banner</li>
-	                    </ol>
-	                </nav>
-	            </div>
-	        </div>
-	    </div>
-	</div>
-	<section class="content">
-	    <div class="row">
-	        <div class="col-lg-12 col-12">
-	            <div class="box">
-	                <div class="box-header with-border">
-	                    <h4 class="box-title">{{ $data == null ? 'Upload' : 'Update ' }} Banner Details</h4>
-	                </div>
-	                <!-- /.box-header -->
-	                <form class="form" method="post" action="{{ $data == null ? route('banner.store') : route('banner.update', $data->id) }}" enctype="multipart/form-data" id="file-upload">
-                	@csrf
-                	{{ $data != null ? method_field('PUT') : '' }}
-	                    <div class="box-body">
-	                        <div class="row">
-	                            <div class="col-md-12">
-	                            	<div class="form-group">
-	                            		<label for="">Title</label>
-	                            		<input type="text" name="title" value="{{ $data == null ? old('title') : $data->title }}" class="form-control">
-	                            	</div>
-	                            	<div class="form-group">
-	                            		<label for="">Description</label>
-	                            		<textarea class="editor" id="editor-1" name="description">{!! $data == null ? old('description') : $data->description !!}</textarea>
-	                            	</div>
-	                            	<div class="form-group">
-	                            		<label for="">Image</label>
-	                            		<input type="file" class="dropify" name="image" {{ $data != null ? 'data-default-file = ' .asset($data->image) : ''}}>
-	                            	</div>
-	                            	<div class="form-group">
-	                            		<label for="">Button Text</label>
-	                            		<input type="text" name="button" value="{{ $data == null ? old('button') : $data->button }}" class="form-control">
-	                            	</div>
-	                            	<div class="form-group">
-	                            		<label for="">Link</label>
-	                            		<input type="text" name="link" value="{{ $data == null ? old('link') : $data->link }}" class="form-control">
-	                            	</div>
-	                            	<div class="form-group">
-	                            		<label for="">Status</label>
-	                            		<select name="status" id="" class="form-control">
-	                            			<option value="0" {{ ($data != null) && ($data->status == 0) ? 'selected' : '' }}>Active</option>
-	                            			<option value="1" {{ ($data != null) && ($data->status == 1) ? 'selected' : '' }}>Deactive</option>
-	                            		</select>
-	                            	</div>
-									<div class="form-group">
-										<div class="progress">
-											<div class="progress-bar progress-bar-striped progress-bar-animated bg-success result" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%" id="progressBar">0%</div>
-											
-										</div>
-									</div>
-	                            </div>
-	                        </div>
-	                    </div>
-	                    <div class="box-footer">
-	                        <button type="button" class="btn btn-rounded btn-warning btn-outline mr-1">
-	                        <i class="ti-trash"></i> Cancel
-	                        </button>
-	                        <button type="submit" class="btn btn-rounded btn-primary btn-outline" onclick="progress()"
-							>
-	                        <i class="ti-save-alt"></i> Save
-	                        </button>
-	                    </div>
-	                </form>
-	            </div>
-	        </div>
-	    </div>
-	</section>
-</div>
 
+@section('title', 'Add Banner')
+
+@section('content')
+<section class="content-header">
+    <h1>
+        Add Banner
+        <small>Create new banner</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="{{ route('admin.dashboard') }}"><i class="fa fa-dashboard"></i> Home</a></li>
+        <li><a href="{{ route('admin.banner.index') }}">Banner List</a></li>
+        <li class="active">Add Banner</li>
+    </ol>
+</section>
+
+<section class="content">
+    <div class="row">
+        <!-- left column -->
+        <div class="col-md-12">
+            <!-- general form elements -->
+            <div class="box">
+                <div class="box-header with-border">
+                    <h3 class="box-title">Banner Details</h3>
+                </div>
+                <!-- /.box-header -->
+                <!-- form start -->
+                <form role="form" action="{{ route('admin.banner.store') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="box-body">
+                        <div class="form-group @error('name') has-error @enderror">
+                            <label for="name">Banner Name</label>
+                            <input type="text" class="form-control" id="name" name="name" placeholder="Enter banner name" value="{{ old('name') }}">
+                            @error('name')
+                                <span class="help-block">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="form-group @error('type') has-error @enderror">
+                            <label for="type">Type <span class="text-danger">*</span></label>
+                            <select class="form-control" id="type" name="type" required>
+                                <option value="">Select Type</option>
+                                <option value="Hero Slider" {{ old('type') == 'Hero Slider' ? 'selected' : '' }}>Hero Slider</option>
+                                <option value="Top Banner" {{ old('type') == 'Top Banner' ? 'selected' : '' }}>Top Banner</option>
+                                <option value="Bottom Banner" {{ old('type') == 'Bottom Banner' ? 'selected' : '' }}>Bottom Banner</option>
+                            </select>
+                            @error('type')
+                                <span class="help-block">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="form-group @error('image') has-error @enderror">
+                            <label for="image">Banner Image <span class="text-danger">*</span></label>
+                            <input type="file" id="image" class="dropify" name="image" required>
+                            <p class="help-block">Upload banner image (recommend size: 1200x400px).</p>
+                            @error('image')
+                                <span class="help-block">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="form-group @error('button_text') has-error @enderror">
+                            <label for="button_text">Button Text</label>
+                            <input type="text" class="form-control" id="button_text" name="button_text" placeholder="Enter button text" value="{{ old('button_text') }}">
+                            @error('button_text')
+                                <span class="help-block">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="form-group @error('url') has-error @enderror">
+                            <label for="url">Button URL</label>
+                            <input type="url" class="form-control" id="url" name="url" placeholder="Enter button URL" value="{{ old('url') }}">
+                            @error('url')
+                                <span class="help-block">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="form-group @error('country_codes') has-error @enderror">
+                            <label>Regions</label>
+                            <select class="form-control select2" multiple="multiple" name="country_codes[]" data-placeholder="Select Regions" style="width: 100%;">
+                                @foreach($regions as $region)
+                                    <option value="{{ $region->code }}" {{ (collect(old('country_codes'))->contains($region->code)) ? 'selected' : '' }}>
+                                        {{ $region->country }} ({{ strtoupper($region->code) }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="help-block">Leave empty to make this banner available for ALL permitted regions.</p>
+                            @error('country_codes')
+                                <span class="help-block">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+                    <!-- /.box-body -->
+
+                    <div class="box-footer">
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <a href="{{ route('admin.banner.index') }}" class="btn btn-default">Cancel</a>
+                    </div>
+                </form>
+            </div>
+            <!-- /.box -->
+        </div>
+    </div>
+</section>
 @endsection
 
-@push('css')
-<style></style>
-@endpush
-
 @push('js')
-<script></script>
+<script>
+    $(function () {
+        //Initialize Select2 Elements
+        $('.select2').select2()
+    })
+</script>
 @endpush

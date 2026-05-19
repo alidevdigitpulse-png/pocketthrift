@@ -14,7 +14,8 @@ class TrendingItem extends Model
         'item_id',
         'region_id',
         'user_id',
-        'position'
+        'position',
+        'row'
     ];
 
     protected $casts = [
