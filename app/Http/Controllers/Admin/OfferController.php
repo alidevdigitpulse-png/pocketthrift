@@ -22,7 +22,7 @@ class OfferController extends Controller
     {
         $user = Auth::user();
         $isAdmin = $user->role == 1 || $user->hasRole('admin') || $user->hasRole('super admin');
-        
+
         $query = Offer::with(['store', 'seasonal', 'creator']);
 
         // Apply region-based filtering for non-admin users
@@ -32,7 +32,7 @@ class OfferController extends Controller
             if ($user->assigned_regions) {
                 $userRegionCodes = [$user->assigned_regions]; // Single region assignment
             }
-            
+
             if (!empty($userRegionCodes)) {
                 $query->byRegionCodes($userRegionCodes);
             } else {
@@ -44,7 +44,7 @@ class OfferController extends Controller
         // Apply filters if present
         if ($request->filled('search')) {
             $query->where('title', 'like', '%' . $request->search . '%')
-                  ->orWhere('code', 'like', '%' . $request->search . '%');
+                ->orWhere('code', 'like', '%' . $request->search . '%');
         }
 
         if ($request->filled('active')) {
@@ -66,7 +66,7 @@ class OfferController extends Controller
         // Filter by country/region (only for admins)
         if ($request->filled('country') && is_string($request->country) && $request->country != '' && $isAdmin) {
             // Filter offers that contain the selected region code in their country_codes
-            $query->where('country_codes', 'LIKE', '%'. $request->country .'%');
+            $query->where('country_codes', 'LIKE', '%' . $request->country . '%');
         }
 
         $offers = $query->orderBy('sort', 'asc')->orderBy('created_at', 'desc')->paginate(15);
@@ -92,7 +92,7 @@ class OfferController extends Controller
     {
         $user = Auth::user();
         $isAdmin = $user->role == 1 || $user->hasRole('admin') || $user->hasRole('super admin');
-        
+
         if ($isAdmin) {
             // Admins can see all stores, seasonals, and regions
             $stores = Store::orderBy('title')->get();
@@ -100,17 +100,17 @@ class OfferController extends Controller
             $regions = Region::all();
         } else {
             // Region-wise users only see their assigned region and stores in their region
-            $stores = Store::where('country_codes', 'LIKE', '%'.$user->assigned_regions.'%')->orderBy('title')->get();
-            $seasonals = Category::where('country_codes', 'LIKE', '%'.$user->assigned_regions.'%')->orderBy('title')->get();
+            $stores = Store::where('country_codes', 'LIKE', '%' . $user->assigned_regions . '%')->orderBy('title')->get();
+            $seasonals = Category::where('country_codes', 'LIKE', '%' . $user->assigned_regions . '%')->orderBy('title')->get();
             $regions = collect();
             if ($user->assigned_regions) {
                 $regions = Region::where('code', $user->assigned_regions)->get();
             }
         }
-        
+
         $types = ['Deal', 'Offer', 'Code', 'Sale'];
         $users = User::orderBy('name')->get();
-        
+
         return view('admin.offers.create', compact('stores', 'seasonals', 'types', 'regions', 'users'));
     }
 
@@ -122,6 +122,7 @@ class OfferController extends Controller
      */
     public function store(Request $request)
     {
+
         $request->validate([
             'title' => 'required|string|max:255',
             'store_id' => 'nullable|exists:stores,id',
@@ -142,7 +143,7 @@ class OfferController extends Controller
 
         $user = Auth::user();
         $isAdmin = $user->role == 1 || $user->hasRole('admin') || $user->hasRole('super admin');
-        
+
         $offer = new Offer();
         $offer->title = $request->title;
         $offer->store_id = $request->store_id;
@@ -159,7 +160,7 @@ class OfferController extends Controller
 
         $offer->new_recently_updated = $request->has('new_recently_updated') ? 1 : 0;
 
-        
+
         // For region-wise users, automatically assign their region
         if ($isAdmin) {
             // Admins can assign to any regions if provided
@@ -173,7 +174,7 @@ class OfferController extends Controller
             // Region-wise users automatically get their region assigned
             $offer->country_codes = $user->assigned_regions;
         }
-        
+
         // $offer->start_date = $request->start_date;
         // $offer->end_date = $request->end_date;
         $offer->active = $request->has('active') ? 1 : 0;
@@ -222,7 +223,7 @@ class OfferController extends Controller
         $types = ['Deal', 'Offer', 'Code', 'Sale'];
         $regions = Region::all();
         $users = User::orderBy('name')->get();
-        
+
         // Split the comma-separated country codes back to an array of region IDs
         $selectedRegions = [];
         $originalCountryCodes = $offer->getOriginal('country_codes');
@@ -264,7 +265,7 @@ class OfferController extends Controller
 
         $user = Auth::user();
         $isAdmin = $user->role == 1 || $user->hasRole('admin') || $user->hasRole('super admin');
-        
+
         $offer->title = $request->title;
         $offer->store_id = $request->store_id;
         $offer->seasonal_id = $request->seasonal_id; // Can be null as specified
@@ -276,7 +277,7 @@ class OfferController extends Controller
         $offer->terms_and_conditions = $request->terms_and_conditions;
         $offer->verified = $request->verified ?? 0;
         $offer->new_recently_updated = $request->has('new_recently_updated') ? 1 : 0;
-        
+
         // For region-wise users, automatically assign their region
         if ($isAdmin) {
             // Admins can assign to any regions if provided
@@ -290,7 +291,7 @@ class OfferController extends Controller
             // Region-wise users automatically get their region assigned
             $offer->country_codes = $user->assigned_regions;
         }
-        
+
         // $offer->start_date = $request->start_date;
         // $offer->end_date = $request->end_date;
         $offer->active = $request->has('active') ? 1 : 0;
@@ -368,7 +369,7 @@ class OfferController extends Controller
             }
             $offer->sort = $request->sort;
             $offer->save();
-    
+
             return response()->json(['success' => true, 'message' => 'Sort order updated successfully']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);

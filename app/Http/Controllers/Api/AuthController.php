@@ -9,6 +9,7 @@ use Illuminate\Validation\ValidationException;
 use App\Http\Resources\{LoginResource};
 use Hash, Auth;
 use Mail;
+
 class AuthController extends Controller
 {
     public function register(Request $request)
@@ -67,7 +68,7 @@ class AuthController extends Controller
     {
         try {
             $request->user()->token()->revoke();
-            return $this->sendResponse([],'Logged Out Successfully!');
+            return $this->sendResponse([], 'Logged Out Successfully!');
         } catch (\Exception $e) {
             return $this->sendError($e->getMessage());
         }
@@ -91,7 +92,7 @@ class AuthController extends Controller
             return $this->sendResponse(['id' => $user->id], 'Please Verify the code.');
         } catch (ValidationException $e) {
             return $this->sendError('Validation Error',  $e->errors());
-        }  catch (\Exception $e) {
+        } catch (\Exception $e) {
             return $this->sendError($e->getMessage());
         }
     }
@@ -121,7 +122,7 @@ class AuthController extends Controller
             return $this->sendError($e->getMessage());
         }
     }
-    
+
     public function changeForgetPassword(Request $request)
     {
         try {
@@ -148,7 +149,6 @@ class AuthController extends Controller
             }
         } catch (ValidationException $e) {
             return $this->sendError('Validation Error',  $e->errors());
-
         } catch (\Exception $e) {
             return $this->sendError($e->getMessage());
         }
