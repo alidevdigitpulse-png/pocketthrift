@@ -7,29 +7,29 @@
     <meta property="og:description" content="{{ $blog->meta_description }}">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:type" content="article">
-    @if($blog->logo)
+    @if ($blog->logo)
         <meta property="og:image" content="{{ asset('uploads/' . $blog->logo) }}">
     @else
         <meta property="og:image" content="https://pocketthrift.com/images/og-image.webp">
     @endif
     <meta property="og:image:alt" content="{{ $blog->title }}">
     <meta property="og:site_name" content="PocketThrift">
-    
+
     {{-- Twitter Card Meta Tags --}}
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ $blog->seo_title }}">
     <meta name="twitter:description" content="{{ $blog->meta_description }}">
-    @if($blog->logo)
+    @if ($blog->logo)
         <meta name="twitter:image" content="{{ asset('uploads/' . $blog->logo) }}">
     @else
         <meta name="twitter:image" content="https://pocketthrift.com/images/og-image.webp">
     @endif
     <meta name="twitter:image:alt" content="{{ $blog->title }}">
-    
+
     @php
         $regionCode = $region->code ?? ($regionCode ?? 'us');
         $baseUrl = rtrim(config('app.url', 'https://pocketthrift.com'), '/');
-        $siteUrl = ($regionCode === 'us') ? $baseUrl : $baseUrl . '/' . $regionCode;
+        $siteUrl = $regionCode === 'us' ? $baseUrl : $baseUrl . '/' . $regionCode;
 
         $title = $meta['title'] ?? ($post->title ?? 'Blog');
         $description = $meta['description'] ?? ($post->excerpt ?? null);
@@ -39,18 +39,33 @@
         $breadcrumbs = $meta['breadcrumbs'] ?? [
             ['name' => __('Home'), 'url' => '/'],
             ['name' => __('Blogs'), 'url' => '/blogs/'],
-            ['name' => $title, 'url' => $path]
+            ['name' => $title, 'url' => $path],
         ];
 
-        $webpage = ["@context" => "https://schema.org/", "@type" => "WebPage", "name" => $title, "description" => $description, "url" => $fullUrl, "publisher" => ["@type" => "Organization", "name" => "PocketThrift", "logo" => ["@type" => "ImageObject", "url" => $siteUrl . '/images/og-image.webp']]];
+        $webpage = [
+            '@context' => 'https://schema.org/',
+            '@type' => 'WebPage',
+            'name' => $title,
+            'description' => $description,
+            'url' => $fullUrl,
+            'publisher' => [
+                '@type' => 'Organization',
+                'name' => 'PocketThrift',
+                'logo' => ['@type' => 'ImageObject', 'url' => $siteUrl . '/images/og-image.webp'],
+            ],
+        ];
 
         $items = [];
         $pos = 1;
         foreach ($breadcrumbs as $b) {
-            $u = (strpos($b['url'], 'http') === 0) ? $b['url'] : rtrim($siteUrl, '/') . '/' . ltrim($b['url'], '/');
-            $items[] = ["@type" => "ListItem", "position" => $pos++, "name" => $b['name'], "item" => $u];
+            $u = strpos($b['url'], 'http') === 0 ? $b['url'] : rtrim($siteUrl, '/') . '/' . ltrim($b['url'], '/');
+            $items[] = ['@type' => 'ListItem', 'position' => $pos++, 'name' => $b['name'], 'item' => $u];
         }
-        $breadcrumbSchema = ["@context" => "https://schema.org/", "@type" => "BreadcrumbList", "itemListElement" => $items];
+        $breadcrumbSchema = [
+            '@context' => 'https://schema.org/',
+            '@type' => 'BreadcrumbList',
+            'itemListElement' => $items,
+        ];
 
         $faqsArr = $meta['faqs'] ?? ($faqs ?? []);
         $faqSchema = null;
@@ -62,22 +77,34 @@
             foreach ($faqsArr as $f) {
                 $q = $f->question ?? null;
                 $a = $f->answer ?? null;
-                if ($q && $a)
-                    $ents[] = ["@type" => "Question", "name" => $q, "acceptedAnswer" => ["@type" => "Answer", "text" => $a]];
+                if ($q && $a) {
+                    $ents[] = [
+                        '@type' => 'Question',
+                        'name' => $q,
+                        'acceptedAnswer' => ['@type' => 'Answer', 'text' => $a],
+                    ];
+                }
             }
-            if (count($ents))
-                $faqSchema = ["@context" => "https://schema.org/", "@type" => "FAQPage", "mainEntity" => $ents];
+            if (count($ents)) {
+                $faqSchema = ['@context' => 'https://schema.org/', '@type' => 'FAQPage', 'mainEntity' => $ents];
+            }
         } elseif (!empty($faqsArr) && is_array($faqsArr)) {
             // Handle if it's already an array format (fallback)
-            $ents = [];
-            foreach ($faqsArr as $f) {
-                $q = $f['question'] ?? $f['name'] ?? null;
-                $a = $f['answer'] ?? $f['acceptedAnswer'] ?? null;
-                if ($q && $a)
-                    $ents[] = ["@type" => "Question", "name" => $q, "acceptedAnswer" => ["@type" => "Answer", "text" => $a]];
+    $ents = [];
+    foreach ($faqsArr as $f) {
+        $q = $f['question'] ?? ($f['name'] ?? null);
+        $a = $f['answer'] ?? ($f['acceptedAnswer'] ?? null);
+        if ($q && $a) {
+            $ents[] = [
+                '@type' => 'Question',
+                'name' => $q,
+                'acceptedAnswer' => ['@type' => 'Answer', 'text' => $a],
+            ];
+        }
+    }
+    if (count($ents)) {
+        $faqSchema = ['@context' => 'https://schema.org/', '@type' => 'FAQPage', 'mainEntity' => $ents];
             }
-            if (count($ents))
-                $faqSchema = ["@context" => "https://schema.org/", "@type" => "FAQPage", "mainEntity" => $ents];
         }
     @endphp
 
@@ -85,7 +112,7 @@
         type="application/ld+json">{!! json_encode($webpage, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) !!}</script>
     <script
         type="application/ld+json">{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) !!}</script>
-    @if($faqSchema)
+    @if ($faqSchema)
         <script
             type="application/ld+json">{!! json_encode($faqSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) !!}</script>
     @endif
@@ -204,7 +231,7 @@
 
         .blog-content table {
             width: 100%;
-            margin-bottom: 0; 
+            margin-bottom: 0;
             border-collapse: collapse;
         }
 
@@ -377,10 +404,14 @@
                         </span>
                         <h1 class="blog-main-title">{{ $blog->title }}</h1>
                         <div class="blog-meta-info">
-                            <span><i
-                                    class="far fa-calendar-alt me-2"></i>{{ $blog->created_at ? __($blog->created_at->format('F')) . ' ' . $blog->created_at->format('j, Y') : '' }}</span>
-                            @if($blog->est_read_time)
-                                <span><span class="mx-2">•</span><i class="far fa-clock me-2"></i>{{ $blog->est_read_time }} {{ __('min read') }}</span>
+                            <span>
+                                <i class="far fa-calendar-alt me-2"></i>
+                                {{ $blog->start_date ? $blog->start_date->format('F j, Y') : $blog->created_at->format('F j, Y') }}
+                            </span>
+                            @if ($blog->est_read_time)
+                                <span><span class="mx-2">•</span><i
+                                        class="far fa-clock me-2"></i>{{ $blog->est_read_time }}
+                                    {{ __('min read') }}</span>
                             @endif
                         </div>
                     </div>
@@ -398,9 +429,10 @@
                     <article>
                         <!-- Featured Image -->
                         <div class="blog-featured-image">
-                            @if($blog->logo)
-                                <img src="{{ asset('uploads/' . $blog->logo) }}" alt="{{ $blog->image_alt ?: $blog->title }}"
-                                    class="w-100" style="object-fit: cover; min-height: 300px;">
+                            @if ($blog->logo)
+                                <img src="{{ asset('uploads/' . $blog->logo) }}"
+                                    alt="{{ $blog->image_alt ?: $blog->title }}" class="w-100"
+                                    style="object-fit: cover; min-height: 300px;">
                             @else
                                 <img src="{{ asset('image.png') }}" alt="{{ $blog->title }}" class="w-100"
                                     style="object-fit: cover; min-height: 300px;">
@@ -412,11 +444,12 @@
                             {!! html_entity_decode($blog->content_body) !!}
 
                             <!-- FAQ Section inside Main Content -->
-                            @if(isset($faqs) && $faqs->isNotEmpty())
+                            @if (isset($faqs) && $faqs->isNotEmpty())
                                 <div class="mt-5 pt-4 border-top">
-                                    <h3 class="mb-4" style="font-size: 1.5rem; color: #1a202c;">{{ __('Frequently Asked Questions') }}</h3>
+                                    <h3 class="mb-4" style="font-size: 1.5rem; color: #1a202c;">
+                                        {{ __('Frequently Asked Questions') }}</h3>
                                     <div class="faq-accordion">
-                                        @foreach($faqs as $index => $faq)
+                                        @foreach ($faqs as $index => $faq)
                                             <div class="faq-modern-item">
                                                 <button class="faq-modern-btn" onclick="toggleModernFAQ(this)"
                                                     aria-expanded="{{ $index === 0 ? 'true' : 'false' }}">
@@ -436,7 +469,7 @@
 
                     <!-- Back to Blogs -->
                     <div class="text-center mt-5 mb-5">
-                        @if(request()->route('region'))
+                        @if (request()->route('region'))
                             <a href="/{{ request()->route('region') }}/blogs"
                                 class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold">
                                 <i class="fas fa-arrow-left me-2"></i>{{ __('Back to All Blogs') }}
@@ -468,12 +501,12 @@
                                     ->get();
 
                                 // If we don't have enough blogs from the same category, get more from other categories
-                                if ($relatedBlogs->count() < 5) {
-                                    $additionalBlogs = \App\Models\Blog::where('id', '!=', $blog->id)
-                                        ->where('active', true)
-                                        ->byRegionCodes([$currentRegion])
-                                        ->whereNotIn('id', $relatedBlogs->pluck('id'))
-                                        ->orderBy('created_at', 'desc')
+if ($relatedBlogs->count() < 5) {
+    $additionalBlogs = \App\Models\Blog::where('id', '!=', $blog->id)
+        ->where('active', true)
+        ->byRegionCodes([$currentRegion])
+        ->whereNotIn('id', $relatedBlogs->pluck('id'))
+        ->orderBy('created_at', 'desc')
                                         ->take(5 - $relatedBlogs->count())
                                         ->get();
 
@@ -481,12 +514,13 @@
                                 }
                             @endphp
 
-                            @foreach($relatedBlogs as $relatedBlog)
-                                <a href="@if(request()->route('region'))/{{ request()->route('region') }}/blogs/{{ ltrim($relatedBlog->url_slug, '/') }}@else/blogs/{{ ltrim($relatedBlog->url_slug, '/') }}@endif"
+                            @foreach ($relatedBlogs as $relatedBlog)
+                                <a href="@if (request()->route('region')) /{{ request()->route('region') }}/blogs/{{ ltrim($relatedBlog->url_slug, '/') }}@else/blogs/{{ ltrim($relatedBlog->url_slug, '/') }} @endif"
                                     class="related-card">
                                     <div class="related-card-img">
-                                        @if($relatedBlog->logo)
-                                            <img src="{{ asset('uploads/' . $relatedBlog->logo) }}" alt="{{ $relatedBlog->title }}"
+                                        @if ($relatedBlog->logo)
+                                            <img src="{{ asset('uploads/' . $relatedBlog->logo) }}"
+                                                alt="{{ $relatedBlog->title }}"
                                                 style="width: 100%; height: 100%; object-fit: cover; border-radius:5px;">
                                         @else
                                             <span class="text-muted fw-bold">{{ substr($relatedBlog->title, 0, 1) }}</span>
@@ -511,11 +545,11 @@
                                     ->get();
                             @endphp
 
-                            @foreach($trendingStores as $store)
-                                <a href="{{ ($currentRegion === 'us' || !$currentRegion) ? route('store.detail', ltrim($store->url_slug, '/')) : route('region.store.detail', ['region' => $currentRegion, 'store' => ltrim($store->url_slug, '/')]) }}"
+                            @foreach ($trendingStores as $store)
+                                <a href="{{ $currentRegion === 'us' || !$currentRegion ? route('store.detail', ltrim($store->url_slug, '/')) : route('region.store.detail', ['region' => $currentRegion, 'store' => ltrim($store->url_slug, '/')]) }}"
                                     class="related-card">
                                     <div class="related-card-img">
-                                        @if($store->logo)
+                                        @if ($store->logo)
                                             <img src="{{ asset('uploads/' . $store->logo) }}" alt="{{ $store->title }}"
                                                 style="width: 100%; height: 100%; object-fit: contain;">
                                         @else
@@ -543,12 +577,12 @@
                 <div class="container py-3">
                     <ul class="list-unstyled d-flex align-items-center gap-2 mb-0 flex-wrap" style="font-size: 0.9rem;">
                         <li class="d-flex align-items-center">
-                            <a href="{{ ($currentRegion === 'us' || !$currentRegion) ? route('home') : route('region.home', ['region' => $currentRegion]) }}"
+                            <a href="{{ $currentRegion === 'us' || !$currentRegion ? route('home') : route('region.home', ['region' => $currentRegion]) }}"
                                 class="text-decoration-none text-muted">{{ __('Home') }}</a>
                             <i class="fas fa-chevron-right mx-2 text-muted" style="font-size: 0.75rem;"></i>
                         </li>
                         <li class="d-flex align-items-center">
-                            <a href="{{ ($currentRegion === 'us' || !$currentRegion) ? route('blogs') : route('region.blogs', ['region' => $currentRegion]) }}"
+                            <a href="{{ $currentRegion === 'us' || !$currentRegion ? route('blogs') : route('region.blogs', ['region' => $currentRegion]) }}"
                                 class="text-decoration-none text-muted">{{ __('Blogs') }}</a>
                             <i class="fas fa-chevron-right mx-2 text-muted" style="font-size: 0.75rem;"></i>
                         </li>
@@ -582,7 +616,7 @@
                 wrapper.style.overflowX = 'auto';
                 wrapper.style.webkitOverflowScrolling = 'touch';
                 wrapper.style.marginBottom = '1.5rem';
-                
+
                 table.parentNode.insertBefore(wrapper, table);
                 wrapper.appendChild(table);
             });

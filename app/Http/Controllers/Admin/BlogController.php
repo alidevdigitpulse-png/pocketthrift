@@ -23,9 +23,10 @@ class BlogController extends Controller
      */
     public function index(Request $request)
     {
+
         $user = Auth::user();
         $isAdmin = $user->role == 1 || $user->hasRole('admin') || $user->hasRole('super admin');
-        
+
         $query = Blog::with('category', 'creator'); // Eager load the relationships
 
         // Apply region-based filtering for non-admin users
@@ -35,7 +36,7 @@ class BlogController extends Controller
             if ($user->assigned_regions) {
                 $userRegionCodes = [$user->assigned_regions]; // Single region assignment
             }
-            
+
             if (!empty($userRegionCodes)) {
                 $query->byRegionCodes($userRegionCodes);
             } else {
@@ -47,16 +48,16 @@ class BlogController extends Controller
         // Search functionality
         if ($request->has('search') && $request->search != '') {
             $query->where('title', 'LIKE', '%' . $request->search . '%')
-                  ->orWhere('seo_title', 'LIKE', '%' . $request->search . '%')
-                  ->orWhere('url_slug', 'LIKE', '%' . $request->search . '%');
+                ->orWhere('seo_title', 'LIKE', '%' . $request->search . '%')
+                ->orWhere('url_slug', 'LIKE', '%' . $request->search . '%');
         }
 
         // Filter by active status
         if ($request->has('active') && $request->active != '') {
             $query->where('active', $request->active);
         }
-        
-        
+
+
         // Filter by region (only for admins)
         if ($request->has('region') && is_string($request->region) && $request->region != '' && $isAdmin) {
             // Filter blogs that contain the selected region code in their country_codes
@@ -76,9 +77,10 @@ class BlogController extends Controller
      */
     public function create()
     {
+
         $user = Auth::user();
         $isAdmin = $user->role == 1 || $user->hasRole('admin') || $user->hasRole('super admin');
-        
+
         if ($isAdmin) {
             // Admins can see all regions
             $regions = Region::all();
@@ -98,13 +100,13 @@ class BlogController extends Controller
                 $categories = collect();
             }
         }
-        
+
         // Debug: Log to see what's happening
         \Log::info('Blog Create - User Role: ' . $user->role);
         \Log::info('Blog Create - Is Admin: ' . ($isAdmin ? 'Yes' : 'No'));
         \Log::info('Blog Create - Categories Count: ' . $categories->count());
         \Log::info('Blog Create - User Assigned Region: ' . ($user->assigned_regions ?? 'None'));
-        
+
         $users = User::all();
         return view('admin.blogs.create', compact('regions', 'categories', 'users'));
     }
@@ -121,7 +123,7 @@ class BlogController extends Controller
 
         $user = Auth::user();
         $isAdmin = $user->role == 1 || $user->hasRole('admin') || $user->hasRole('super admin');
-        
+
         $blog = new Blog();
         $blog->category_id = $request->category_id;
         $blog->title = $request->title;
@@ -136,10 +138,10 @@ class BlogController extends Controller
         $blog->logo = $request->logo;
         $blog->image_alt = $request->image_alt;
         $blog->image_title = $request->image_title;
-        // $blog->start_date = $request->start_date;
+        $blog->start_date = $request->start_date;
         // $blog->end_date = $request->end_date;
         $blog->meta_robots = $request->meta_robots;
-        
+
         // Handle region codes
         if ($isAdmin) {
             // Admins can assign to any regions if provided
@@ -152,27 +154,27 @@ class BlogController extends Controller
             // Region-wise users automatically get their region assigned
             $blog->country_codes = [$user->assigned_regions];
         }
-        
+
         $blog->active = $request->has('active') ? 1 : 0;
         $blog->sort = $request->sort ?? 0;
         $blog->created_by = Auth::id();
         $blog->updated_by = Auth::id();
-        
+
         // Handle image upload if available
         if ($request->hasFile('image')) {
             // File object
             $file = $request->file('image');
-            
+
             // Unique filename
             $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            
+
             // Path inside public folder
             $file->move(public_path('uploads/store_icons'), $fileName);
-            
+
             // Save in DB - path relative to uploads folder
             $blog->logo = 'store_icons/' . $fileName;
         }
-        
+
         $blog->save();
 
         // Handle FAQs
@@ -180,7 +182,7 @@ class BlogController extends Controller
             $questions = $request->faq_question;
             $answers = $request->faq_answer;
             $sorts = $request->faq_sort;
-            
+
             foreach ($questions as $key => $question) {
                 if (!empty($question) && !empty($answers[$key])) {
                     $faq = new \App\Models\Faq();
@@ -207,7 +209,7 @@ class BlogController extends Controller
     public function show(Blog $blog)
     {
         $blog->load('category', 'creator', 'updater', 'deleter'); // Load all necessary relationships
-        
+
         // Get the regions based on the stored country codes (JSON array)
         $assignedRegions = collect();
         $regionCodes = $blog->country_codes;
@@ -224,7 +226,7 @@ class BlogController extends Controller
         if (!empty($regionCodes)) {
             $assignedRegions = Region::whereIn('code', $regionCodes)->get();
         }
-        
+
         return view('admin.blogs.show', compact('blog', 'assignedRegions'));
     }
 
@@ -238,19 +240,19 @@ class BlogController extends Controller
     {
         $user = Auth::user();
         $isAdmin = $user->role == 1 || $user->hasRole('admin') || $user->hasRole('super admin');
-        
+
         // Check if user has permission to edit this blog
         if (!$isAdmin) {
             // Region-wise users can only edit blogs in their assigned region
             $userRegionCode = $user->assigned_regions;
             $blogRegionCodes = $blog->country_codes ?? [];
-            
+
             if (!empty($blogRegionCodes) && !in_array($userRegionCode, $blogRegionCodes)) {
                 // User doesn't have permission to edit this blog
                 return redirect()->route('admin.blog.index')->with('error', 'You do not have permission to edit this blog.');
             }
         }
-        
+
         if ($isAdmin) {
             // Admins can see all regions
             $regions = Region::all();
@@ -270,10 +272,10 @@ class BlogController extends Controller
                 $categories = collect();
             }
         }
-        
+
         // Get selected regions from the stored country codes (JSON array)
         $selectedRegions = $blog->country_codes ?? [];
-        
+
         // Fallback for legacy CSV or bad JSON
         if (empty($selectedRegions)) {
             $raw = $blog->getRawOriginal('country_codes');
@@ -286,9 +288,9 @@ class BlogController extends Controller
         if (!is_array($selectedRegions)) {
             $selectedRegions = [];
         }
-        
+
         $users = User::all();
-        
+
         return view('admin.blogs.edit', compact('blog', 'regions', 'categories', 'users', 'selectedRegions'));
     }
 
@@ -305,7 +307,7 @@ class BlogController extends Controller
 
         $user = Auth::user();
         $isAdmin = $user->role == 1 || $user->hasRole('admin') || $user->hasRole('super admin');
-        
+
         $blog->category_id = $request->category_id;
         $blog->title = $request->title;
         $blog->seo_title = $request->seo_title;
@@ -319,10 +321,11 @@ class BlogController extends Controller
         // $blog->logo = $request->logo;
         $blog->image_alt = $request->image_alt;
         $blog->image_title = $request->image_title;
+        $blog->start_date = $request->start_date;
         // $blog->start_date = $request->start_date;
         // $blog->end_date = $request->end_date;
         $blog->meta_robots = $request->meta_robots;
-        
+
         // Handle region codes
         if ($isAdmin) {
             // Admins can assign to any regions if provided
@@ -335,32 +338,32 @@ class BlogController extends Controller
             // Region-wise users automatically get their region assigned
             $blog->country_codes = [$user->assigned_regions];
         }
-        
+
         $blog->active = $request->has('active') ? 1 : 0;
         $blog->sort = $request->sort ?? 0;
         $blog->updated_by = Auth::id();
-        
+
         // Handle image upload if available
         if ($request->hasFile('image')) {
             // Delete old image if exists
             if ($blog->logo && file_exists(public_path('uploads/' . $blog->logo))) {
                 unlink(public_path('uploads/' . $blog->logo));
             }
-            
+
             // File object
             $file = $request->file('image');
-            
+
             // Unique filename
             $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            
+
             // Path inside public folder
             $file->move(public_path('uploads/store_icons'), $fileName);
-            
+
             // Save in DB - path relative to uploads folder
             $blog->logo = 'store_icons/' . $fileName;
         }
 
-        \Illuminate\Support\Facades\DB::transaction(function() use ($blog, $request) {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($blog, $request) {
             $blog->save();
 
             // Handle FAQs - Delete old and create new
@@ -374,11 +377,11 @@ class BlogController extends Controller
 
                 // Permanently remove existing FAQs associated with this blog (force delete to avoid soft delete issues)
                 $blog->faqs()->forceDelete();
-                
+
                 $questions = $request->faq_question;
                 $answers = $request->faq_answer;
                 $sorts = $request->faq_sort;
-                
+
                 foreach ($questions as $key => $question) {
                     if (!empty($question) && !empty($answers[$key])) {
                         $faq = new \App\Models\Faq();
@@ -445,7 +448,7 @@ class BlogController extends Controller
         $term = $request->term;
         $user = Auth::user();
         $isAdmin = $user->role == 1 || $user->hasRole('admin') || $user->hasRole('super admin');
-        
+
         $query = Blog::query();
 
         // Apply region-based filtering for non-admin users
@@ -454,7 +457,7 @@ class BlogController extends Controller
             if ($user->assigned_regions) {
                 $userRegionCodes = [$user->assigned_regions]; // Single region assignment
             }
-            
+
             if (!empty($userRegionCodes)) {
                 $query->byRegionCodes($userRegionCodes);
             } else {
@@ -464,15 +467,15 @@ class BlogController extends Controller
         }
 
         if (!empty($term)) {
-            $query->where(function($q) use ($term) {
+            $query->where(function ($q) use ($term) {
                 $q->where('title', 'LIKE', '%' . $term . '%')
-                  ->orWhere('seo_title', 'LIKE', '%' . $term . '%')
-                  ->orWhere('url_slug', 'LIKE', '%' . $term . '%');
+                    ->orWhere('seo_title', 'LIKE', '%' . $term . '%')
+                    ->orWhere('url_slug', 'LIKE', '%' . $term . '%');
             });
         }
-        
+
         $results = $query->select('title')->distinct()->limit(20)->get()
-            ->map(function($blog) {
+            ->map(function ($blog) {
                 return [
                     'id' => $blog->title, // Use title as ID so the search filter works with strings
                     'text' => $blog->title

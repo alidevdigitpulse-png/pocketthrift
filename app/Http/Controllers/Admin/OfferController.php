@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 
 class OfferController extends Controller
 {
+
     /**
      * Display a listing of the resource.
      *

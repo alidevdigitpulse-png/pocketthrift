@@ -45,6 +45,7 @@ class StoreBlogRequest extends FormRequest
             'meta_robots' => 'nullable|string|max:500',
             'country_codes' => 'nullable|array',
             'active' => 'boolean',
+            'start_date' => 'nullable|date',
             'sort' => 'required|integer',
             'created_by' => 'nullable|exists:users,id',
             'faq_question' => 'nullable|array',
@@ -63,7 +64,7 @@ class StoreBlogRequest extends FormRequest
     {
         $user = Auth::user();
         $isAdmin = $user->role == 1 || $user->hasRole('admin') || $user->hasRole('super admin');
-        
+
         // Determine which region codes to check
         $regionCodesToCheck = [];
         if ($isAdmin && $this->has('country_codes') && is_array($this->country_codes)) {
@@ -75,16 +76,16 @@ class StoreBlogRequest extends FormRequest
                 $regionCodesToCheck = [$user->assigned_regions];
             }
         }
-        
+
         // Check for existing blogs with same slug in the same region(s)
         if (!empty($regionCodesToCheck)) {
             $query = Blog::where('url_slug', $urlSlug);
-            
+
             // Exclude current blog if updating
             if ($excludeBlogId) {
                 $query->where('id', '!=', $excludeBlogId);
             }
-            
+
             // Check if slug exists in any of the selected regions
             // Blogs store country_codes as comma-separated values
             $query->where(function($q) use ($regionCodesToCheck) {
@@ -92,9 +93,9 @@ class StoreBlogRequest extends FormRequest
                     $q->orWhereRaw("FIND_IN_SET(?, REPLACE(country_codes, ' ', '')) > 0", [$code]);
                 }
             });
-            
+
             $existingBlog = $query->first();
-            
+
             if ($existingBlog) {
                 $fail('The url slug has already been taken in the selected region.');
             }
