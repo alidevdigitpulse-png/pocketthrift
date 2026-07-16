@@ -9,18 +9,19 @@ class RegionService
 {
     /**
      * Get the current region based on session or default to 'us'
-     * 
+     *
      * @return \App\Models\Region|null
      */
     public function getCurrentRegion()
     {
         $regionCode = trim(strtolower(Session::get('current_region', 'us')));
+
         return Region::whereRaw('LOWER(TRIM(code)) = ?', [$regionCode])->where('active', true)->first();
     }
 
     /**
      * Get the current region code
-     * 
+     *
      * @return string
      */
     public function getCurrentRegionCode()
@@ -30,7 +31,7 @@ class RegionService
 
     /**
      * Set the current region in session
-     * 
+     *
      * @param string $regionCode
      * @return void
      */
@@ -38,7 +39,7 @@ class RegionService
     {
         $regionCode = trim(strtolower($regionCode));
         $region = Region::whereRaw('LOWER(TRIM(code)) = ?', [$regionCode])->where('active', true)->first();
-        
+
         if ($region) {
             Session::put('current_region', $regionCode);
         } else {
@@ -49,7 +50,7 @@ class RegionService
 
     /**
      * Get all available regions
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getAllRegions()
@@ -59,7 +60,7 @@ class RegionService
 
     /**
      * Check if the current region is the default (US)
-     * 
+     *
      * @return bool
      */
     public function isDefaultRegion()
@@ -69,25 +70,25 @@ class RegionService
 
     /**
      * Get region URL path based on current region
-     * 
+     *
      * @param string $path
      * @return string
      */
     public function getRegionPath($path = '')
     {
         $currentRegion = $this->getCurrentRegionCode();
-        
+
         if ($currentRegion === 'us' || empty($currentRegion)) {
             // For US, don't prefix the path
             return $path;
         }
-        
+
         return $currentRegion . '/' . ltrim($path, '/');
     }
 
     /**
      * Generate a URL with region prefix when appropriate
-     * 
+     *
      * @param string $path
      * @return string
      */
@@ -95,7 +96,7 @@ class RegionService
     {
         $currentRegion = $this->getCurrentRegionCode();
         $baseUrl = url('');
-        
+
         if ($currentRegion === 'us' || empty($currentRegion)) {
             // For US, use base URL without region prefix
             return $baseUrl . ($path ? '/' . ltrim($path, '/') : '/');
@@ -107,7 +108,7 @@ class RegionService
 
     /**
      * Get all region URLs for a specific path for hreflang tags
-     * 
+     *
      * @param string $path
      * @return array
      */
@@ -135,7 +136,7 @@ class RegionService
 
     /**
      * Get all active region codes
-     * 
+     *
      * @return array
      */
     public function getRegionCodes()
@@ -147,7 +148,7 @@ class RegionService
 
     /**
      * Set the current region for the application
-     * 
+     *
      * @return void
      */
     public function setAppRegion()
@@ -160,7 +161,7 @@ class RegionService
                 Session::put('current_region', 'us');
             }
         }
-        
+
         // Set the region in a global context if needed
         if ($currentRegion) {
             app()->singleton('current_region', function () use ($currentRegion) {

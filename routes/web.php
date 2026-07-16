@@ -12,7 +12,8 @@ use App\Http\Controllers\{
     UserController,
     RegionChangeController,
     RegionController,
-    SitemapController
+    SitemapController,
+     SizzlingoController
 };
 use App\Http\Controllers\Admin\{
     AdminController,
@@ -97,6 +98,12 @@ Route::group([
     'middleware' => [\App\Http\Middleware\RegionMiddleware::class]
 ], function () {
     Route::get('/', [HomeController::class, 'index'])->name('region.home');
+
+    // Sizzzlingo landing page - Australia only
+  Route::get('/sizzlingo-meals', [SizzlingoController::class, 'index'])
+        ->where('region', 'au')
+        ->name('region.sizzlingo.meals');
+
     Route::get('/about-us', [HomeController::class, 'aboutUs'])->name('region.aboutUs');
 
     Route::get('/privacy-policy', [HomeController::class, 'privacy'])->name('region.privacyPolicy');
@@ -148,7 +155,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'isAdmin']], functio
     Route::get('inquiry', [InquiryController::class, 'index'])->name('inquiry.index');
     Route::get('inquiry-detail/{id}', [InquiryController::class, 'detail'])->name('inquiry.detail');
 
-    
+
     //Order
     Route::resource('order', OrderController::class);
     Route::get('order-detail/{id}', [OrderController::class,'orderDetail'])->name('order_detail');

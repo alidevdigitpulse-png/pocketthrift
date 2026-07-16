@@ -20,6 +20,24 @@ return [
         'endpoint' => env('MAILGUN_ENDPOINT', 'api.mailgun.net'),
     ],
 
+    'sizzlingo' => [
+        'store_domain' => 'sizlingoexpress.myshopify.com',
+        'api_version' => '2026-07',
+
+        /*
+        |--------------------------------------------------------------------------
+        | Storefront API Token
+        |--------------------------------------------------------------------------
+        |
+        | Yahan Storefront API public access token paste karo.
+        | Admin API token mat lagana.
+        |
+        */
+
+        'storefront_token' => '8d6779abaae3356089849bc62613eff6',
+
+        'store_url' => 'https://www.sizzzlingoexpress.com.au',
+    ],
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],
@@ -34,7 +52,7 @@ return [
     'client_id' => env('GOOGLE_CLIENT_ID'),
     'client_secret' => env('GOOGLE_CLIENT_SECRET'),
     'redirect' => env('GOOGLE_REDIRECT_URI'),
-],  
+],
     'facebook' => [
         'client_id' => '852525629054617',
         'client_secret' => '6da76aca496e4872f1ffd29bc3933cba',
@@ -44,5 +62,5 @@ return [
     'stripe' => [
         'secret' => env('STRIPE_SECRET'),
    ],
-   
+
 ];

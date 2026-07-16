@@ -19,14 +19,14 @@ class RegionChangeController extends Controller
     {
         // Validate that the region code exists
         $region = \App\Models\Region::where('code', $regionCode)->where('active', true)->first();
-        
+
         if (!$region) {
             abort(404, 'Region not found');
         }
-        
+
         // Set the region in session
         $this->regionService->setCurrentRegion($regionCode);
-        
+
         // Map region codes to locale codes (same as in RegionMiddleware)
         $localeMap = [
             'us' => 'en-US',
@@ -48,7 +48,7 @@ class RegionChangeController extends Controller
             'sg' => 'en-SG',
             'at' => 'de-AT',
         ];
-        
+
         // Set the locale immediately in the session
         $locale = $localeMap[$regionCode] ?? 'en-US';
         Session::put('locale', $locale);
@@ -58,15 +58,16 @@ class RegionChangeController extends Controller
         if ($regionCode === 'us') {
             $redirectUrl = url('/');
         } else {
+
             $redirectUrl = url('/' . $regionCode);
         }
-        
+
         // Make sure no trailing slash is randomly added
         $redirectUrl = rtrim($redirectUrl, '/');
         if (empty($redirectUrl)) {
             $redirectUrl = url('/');
         }
-        
+
         return redirect()->to($redirectUrl)->withHeaders([
             'Cache-Control' => 'no-cache, no-store, must-revalidate',
             'Pragma' => 'no-cache',
