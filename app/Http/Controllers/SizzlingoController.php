@@ -7,92 +7,208 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Throwable;
-
+use Illuminate\Pagination\LengthAwarePaginator;
 class SizzlingoController extends Controller
 {
+    private const COLLECTIONS_BACKUP_KEY =
+        'sizzlingo.storefront.collections.backup';
+
     /**
-     * Display the Sizzzlingo landing page.
+     * Display Sizzzlingo landing page with all collections.
      */
     public function index(string $region)
     {
+        $region = $this->validateRegion($region);
+
+        $rawCollections = [];
+        $collectionsError = null;
+        $usingBackupData = false;
+
         /*
         |--------------------------------------------------------------------------
-        | Australia region only
+        | Fetch raw API data
         |--------------------------------------------------------------------------
+        |
+        | Route URLs ko is try block ke andar generate nahi kiya ja raha.
+        | Isse route errors API errors ke taur par catch nahi honge.
+        |
         */
 
-        abort_unless(strtolower($region) === 'au', 404);
-
-        $collectionsUnavailable = false;
-        $collectionsError = null;
-
         try {
-            $collections = $this->getCollections();
+            $rawCollections = $this->fetchCollections();
+
+            if (!empty($rawCollections)) {
+                Cache::put(
+                    self::COLLECTIONS_BACKUP_KEY,
+                    $rawCollections,
+                    now()->addDays(7)
+                );
+            }
         } catch (Throwable $exception) {
             report($exception);
 
-            /*
-            |--------------------------------------------------------------------------
-            | API fallback
-            |--------------------------------------------------------------------------
-            |
-            | Shopify request fail ho to last successful cached response use karo.
-            |
-            */
+            $usingBackupData = true;
 
             $backupCollections = Cache::get(
-                'sizzlingo.storefront.collections.backup',
+                self::COLLECTIONS_BACKUP_KEY,
                 []
             );
 
-            $collections = $this->formatCollections(
-                is_array($backupCollections)
-                    ? $backupCollections
-                    : []
-            );
+            $rawCollections = is_array($backupCollections)
+                ? $backupCollections
+                : [];
 
-            $collectionsUnavailable = $collections->isEmpty();
-
-            /*
-             * Local environment mein actual error available rahegi.
-             * Production par visitor ko technical error show nahi hogi.
-             */
             if (app()->environment('local')) {
                 $collectionsError = $exception->getMessage();
             }
         }
 
+            /*
+            |--------------------------------------------------------------------------
+            | Format all Shopify collections
+            |--------------------------------------------------------------------------
+            */
+
+            $formattedCollections = $this->formatCollections(
+                $rawCollections,
+                $region
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | Collections pagination
+            |--------------------------------------------------------------------------
+            */
+
+            $perPage = 10;
+
+            $totalCollections = $formattedCollections->count();
+
+            $lastPage = max(
+                (int) ceil($totalCollections / $perPage),
+                1
+            );
+
+            $currentPage = (int) LengthAwarePaginator::resolveCurrentPage();
+
+            $currentPage = max(
+                1,
+                min($currentPage, $lastPage)
+            );
+
+            $currentPageCollections = $formattedCollections
+                ->forPage($currentPage, $perPage)
+                ->values();
+
+            $collections = new LengthAwarePaginator(
+                $currentPageCollections,
+                $totalCollections,
+                $perPage,
+                $currentPage,
+                [
+                    'path' => request()->url(),
+                    'query' => request()->query(),
+                ]
+            );
         return view('sizzlingo.index', [
+            'region' => $region,
             'collections' => $collections,
-            'collectionsUnavailable' => $collectionsUnavailable,
+            'collectionsUnavailable' => $collections->isEmpty(),
             'collectionsError' => $collectionsError,
+            'usingBackupData' => $usingBackupData,
             'sizzlingoBaseUrl' => $this->getStoreUrl(),
         ]);
     }
 
+/**
+ * Display selected Shopify collection
+ * and its dependent products.
+ */
+/**
+ * Show selected Shopify collection and its products.
+ */
+public function showCollection(
+    string $region,
+    string $handle
+) {
+    $region = strtolower(trim($region));
+    $handle = strtolower(trim($handle));
+
+    abort_unless($region === 'au', 404);
+
+    abort_unless(
+        preg_match('/^[a-z0-9\-]+$/', $handle) === 1,
+        404
+    );
+
+    try {
+        $rawCollection = $this->fetchCollectionProducts(
+            $handle
+        );
+
+        if (
+            !is_array($rawCollection)
+            || empty($rawCollection['id'])
+        ) {
+            return response(
+                'Collection not found.',
+                404
+            );
+        }
+
+        $collection = $this->formatCollectionProducts(
+            $rawCollection
+        );
+
+        return view('sizzlingo.collection', [
+            'region' => $region,
+            'collection' => $collection,
+            'products' => $collection['products'],
+            'collectionError' => null,
+            'usingBackupData' => false,
+            'sizzlingoBaseUrl' => $this->getStoreUrl(),
+        ]);
+    } catch (Throwable $exception) {
+        report($exception);
+
+        if (app()->environment('local')) {
+            return response()->json([
+                'success' => false,
+                'stage' => 'collection_view',
+                'message' => $exception->getMessage(),
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine(),
+            ], 500);
+        }
+
+        return response(
+            'Sizzzlingo products are temporarily unavailable.',
+            503
+        );
+    }
+}
     /**
-     * Fetch collections from Shopify Storefront GraphQL API.
+     * Fetch all available collections.
      */
-    private function getCollections(): Collection
+    private function fetchCollections(): array
     {
-        $rawCollections = Cache::remember(
-            'sizzlingo.storefront.collections.v3',
-            now()->addHours(6),
-            function (): array {
-                $query = <<<'GRAPHQL'
-query GetCollections {
-    collections(first: 50) {
+        $query = <<<'GRAPHQL'
+query GetCollections($first: Int!) {
+    collections(first: $first) {
         nodes {
             id
             title
             handle
             description
+
             image {
                 url
                 altText
             }
         }
+
         pageInfo {
             hasNextPage
             endCursor
@@ -101,214 +217,263 @@ query GetCollections {
 }
 GRAPHQL;
 
-                $data = $this->storefrontRequest($query);
-
-                $collections = data_get(
-                    $data,
-                    'collections.nodes',
-                    []
-                );
-
-                if (!is_array($collections)) {
-                    throw new RuntimeException(
-                        'Invalid collections data received from Shopify.'
-                    );
-                }
-
-                /*
-                 * Last successful raw response ko seven days backup rakho.
-                 */
-                Cache::put(
-                    'sizzlingo.storefront.collections.backup',
-                    $collections,
-                    now()->addDays(7)
-                );
-
-                return $collections;
-            }
+        $data = $this->storefrontRequest(
+            $query,
+            [
+                'first' => 50,
+            ]
         );
 
-        return $this->formatCollections(
-            is_array($rawCollections)
-                ? $rawCollections
-                : []
+        $collections = data_get(
+            $data,
+            'collections.nodes',
+            []
         );
+
+        if (!is_array($collections)) {
+            throw new RuntimeException(
+                'Invalid collections data received from Shopify.'
+            );
+        }
+
+        return $collections;
     }
 
-    /**
-     * Send a request to Shopify Storefront GraphQL API.
-     */
 
 /**
- * Send request to Shopify Storefront GraphQL API.
+ * Fetch selected collection and its products.
  */
-private function storefrontRequest(
-    string $query,
-    array $variables = []
-): array {
-    $storeDomain = trim(
-        (string) config('services.sizzlingo.store_domain')
+private function fetchCollectionProducts(
+    string $handle
+): ?array {
+    $query = <<<'GRAPHQL'
+query GetCollectionProducts(
+    $handle: String!
+    $productsFirst: Int!
+) {
+    collection(handle: $handle) {
+        id
+        title
+        handle
+        description
+
+        image {
+            url
+            altText
+        }
+
+        seo {
+            title
+            description
+        }
+
+        products(first: $productsFirst) {
+            nodes {
+                id
+                title
+                handle
+                description(truncateAt: 160)
+                availableForSale
+
+                featuredImage {
+                    url
+                    altText
+                }
+
+                priceRange {
+                    minVariantPrice {
+                        amount
+                        currencyCode
+                    }
+
+                    maxVariantPrice {
+                        amount
+                        currencyCode
+                    }
+                }
+
+                variants(first: 1) {
+                    nodes {
+                        id
+                        availableForSale
+
+                        price {
+                            amount
+                            currencyCode
+                        }
+
+                        compareAtPrice {
+                            amount
+                            currencyCode
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+GRAPHQL;
+
+    $data = $this->storefrontRequest(
+        $query,
+        [
+            'handle' => $handle,
+            'productsFirst' => 50,
+        ]
     );
 
-    $apiVersion = trim(
-        (string) config(
-            'services.sizzlingo.api_version',
-            '2026-07'
-        )
+    $collection = data_get(
+        $data,
+        'collection'
     );
 
-    $accessToken = trim(
-        (string) config('services.sizzlingo.storefront_token')
-    );
-
-    /*
-    |--------------------------------------------------------------------------
-    | Validate configuration
-    |--------------------------------------------------------------------------
-    */
-
-    if ($storeDomain === '') {
-        throw new \RuntimeException(
-            'Sizzzlingo Shopify store domain is missing.'
-        );
-    }
-
-    if (
-        $accessToken === ''
-        || $accessToken === 'PASTE_STOREFRONT_ACCESS_TOKEN_HERE'
-    ) {
-        throw new \RuntimeException(
-            'Sizzzlingo Storefront API token is missing.'
-        );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Storefront GraphQL endpoint
-    |--------------------------------------------------------------------------
-    */
-
-    $endpoint = sprintf(
-        'https://%s/api/%s/graphql.json',
-        $storeDomain,
-        $apiVersion
-    );
-
-    /*
-    |--------------------------------------------------------------------------
-    | Guzzle options
-    |--------------------------------------------------------------------------
-    |
-    | Local Windows WAMP par SSL verification temporarily disable hogi.
-    | Live production server par SSL verification enabled rahegi.
-    |
-    */
-
-    $requestOptions = [
-        'connect_timeout' => 10,
-    ];
-
-    if (
-        app()->environment('local')
-        && PHP_OS_FAMILY === 'Windows'
-    ) {
-        $requestOptions['verify'] = false;
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Send Shopify request
-    |--------------------------------------------------------------------------
-    */
-
-    $request = \Illuminate\Support\Facades\Http::withHeaders([
-        'X-Shopify-Storefront-Access-Token' => $accessToken,
-        'Content-Type' => 'application/json',
-        'Accept' => 'application/json',
-        'User-Agent' => 'PocketThrift/1.0',
-    ])
-        ->timeout(30)
-        ->withOptions($requestOptions)
-        ->retry(2, 500);
-
-    $response = $request->post($endpoint, [
-        'query' => $query,
-
-        /*
-         * GraphQL variables should be an object when empty.
-         */
-        'variables' => empty($variables)
-            ? new \stdClass()
-            : $variables,
-    ]);
-
-    /*
-    |--------------------------------------------------------------------------
-    | Handle HTTP errors
-    |--------------------------------------------------------------------------
-    */
-
-    if (!$response->successful()) {
-        throw new \RuntimeException(
-            'Shopify Storefront API returned HTTP '
-            . $response->status()
-            . '. Response: '
-            . \Illuminate\Support\Str::limit(
-                $response->body(),
-                700
-            )
-        );
-    }
-
-    $responseData = $response->json();
-
-    if (!is_array($responseData)) {
-        throw new \RuntimeException(
-            'Shopify returned an invalid JSON response.'
-        );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Handle GraphQL errors
-    |--------------------------------------------------------------------------
-    |
-    | GraphQL HTTP 200 ke bawajood errors return kar sakta hai.
-    |
-    */
-
-    if (!empty($responseData['errors'])) {
-        throw new \RuntimeException(
-            'Shopify GraphQL error: '
-            . json_encode(
-                $responseData['errors'],
-                JSON_UNESCAPED_SLASHES
-                | JSON_UNESCAPED_UNICODE
-            )
-        );
-    }
-
-    $data = $responseData['data'] ?? null;
-
-    if (!is_array($data)) {
-        throw new \RuntimeException(
-            'Shopify GraphQL response does not contain valid data.'
-        );
-    }
-
-    return $data;
+    return is_array($collection)
+        ? $collection
+        : null;
 }
 
+    /**
+     * Send request using Laravel HTTP Client
+     * to Shopify Storefront GraphQL API.
+     */
+    private function storefrontRequest(
+        string $query,
+        array $variables = []
+    ): array {
+        $storeDomain = trim(
+            (string) config(
+                'services.sizzlingo.store_domain'
+            )
+        );
 
+        $apiVersion = trim(
+            (string) config(
+                'services.sizzlingo.api_version',
+                '2026-07'
+            )
+        );
+
+        $accessToken = trim(
+            (string) config(
+                'services.sizzlingo.storefront_token'
+            )
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validate configuration
+        |--------------------------------------------------------------------------
+        */
+
+        if ($storeDomain === '') {
+            throw new RuntimeException(
+                'Sizzzlingo Shopify store domain is missing.'
+            );
+        }
+
+        if (
+            $accessToken === ''
+            || $accessToken ===
+                'PASTE_STOREFRONT_ACCESS_TOKEN_HERE'
+        ) {
+            throw new RuntimeException(
+                'Sizzzlingo Storefront API token is missing.'
+            );
+        }
+
+        $endpoint = sprintf(
+            'https://%s/api/%s/graphql.json',
+            $storeDomain,
+            $apiVersion
+        );
+
+        $requestOptions = [
+            'connect_timeout' => 10,
+        ];
+
+        /*
+         * Local Windows/WAMP SSL workaround only.
+         */
+        if (
+            app()->environment('local')
+            && PHP_OS_FAMILY === 'Windows'
+        ) {
+            $requestOptions['verify'] = false;
+        }
+
+        $response = Http::withHeaders([
+            'X-Shopify-Storefront-Access-Token' =>
+                $accessToken,
+
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+            'User-Agent' => 'PocketThrift/1.0',
+            'Cache-Control' => 'no-cache',
+            'Pragma' => 'no-cache',
+        ])
+            ->timeout(30)
+            ->withOptions($requestOptions)
+            ->retry(2, 500)
+            ->post($endpoint, [
+                'query' => $query,
+
+                'variables' => empty($variables)
+                    ? new \stdClass()
+                    : $variables,
+            ]);
+
+        if (!$response->successful()) {
+            throw new RuntimeException(
+                'Shopify Storefront API returned HTTP '
+                . $response->status()
+                . '. Response: '
+                . Str::limit(
+                    $response->body(),
+                    700
+                )
+            );
+        }
+
+        $responseData = $response->json();
+
+        if (!is_array($responseData)) {
+            throw new RuntimeException(
+                'Shopify returned invalid JSON.'
+            );
+        }
+
+        /*
+         * GraphQL can return errors with HTTP 200.
+         */
+        if (!empty($responseData['errors'])) {
+            throw new RuntimeException(
+                'Shopify GraphQL error: '
+                . json_encode(
+                    $responseData['errors'],
+                    JSON_UNESCAPED_SLASHES
+                    | JSON_UNESCAPED_UNICODE
+                )
+            );
+        }
+
+        $data = $responseData['data'] ?? null;
+
+        if (!is_array($data)) {
+            throw new RuntimeException(
+                'Shopify GraphQL response contains no valid data.'
+            );
+        }
+
+        return $data;
+    }
 
     /**
-     * Format collections for the landing-page Blade.
+     * Format landing-page collections.
      */
     private function formatCollections(
-        array $rawCollections
+        array $rawCollections,
+        string $region
     ): Collection {
-        $storeUrl = $this->getStoreUrl();
-
         return collect($rawCollections)
             ->filter(function ($collection): bool {
                 return is_array($collection)
@@ -318,13 +483,12 @@ private function storefrontRequest(
             ->reject(function ($collection): bool {
                 $handle = strtolower(
                     trim(
-                        (string) ($collection['handle'] ?? '')
+                        (string) (
+                            $collection['handle'] ?? ''
+                        )
                     )
                 );
 
-                /*
-                 * Shopify default/general collections hide karo.
-                 */
                 return in_array(
                     $handle,
                     [
@@ -334,18 +498,26 @@ private function storefrontRequest(
                     true
                 );
             })
-            ->map(function ($collection) use ($storeUrl): array {
+            ->map(function ($collection) use (
+                $region
+            ): array {
                 $title = trim(
-                    (string) ($collection['title'] ?? '')
+                    (string) (
+                        $collection['title'] ?? ''
+                    )
                 );
 
                 $handle = trim(
-                    (string) ($collection['handle'] ?? ''),
+                    (string) (
+                        $collection['handle'] ?? ''
+                    ),
                     '/'
                 );
 
                 $description = trim(
-                    (string) ($collection['description'] ?? '')
+                    (string) (
+                        $collection['description'] ?? ''
+                    )
                 );
 
                 $imageUrl = data_get(
@@ -366,7 +538,10 @@ private function storefrontRequest(
                     'handle' => $handle,
 
                     'description' => $description !== ''
-                        ? Str::limit($description, 105)
+                        ? Str::limit(
+                            $description,
+                            105
+                        )
                         : 'Explore halal ready meals from Sizzzlingo Express.',
 
                     'image' => is_string($imageUrl)
@@ -380,21 +555,456 @@ private function storefrontRequest(
                             : $title,
 
                     /*
-                     * Abhi direct Shopify collection link.
-                     * Baad mein internal collection page route laga sakte hain.
+                     * Correct internal collection route.
                      */
-                    'url' => $storeUrl
-                        . '/collections/'
-                        . $handle,
+                    'url' => route(
+                        'region.sizzlingo.collection',
+                        [
+                            'region' => $region,
+                            'handle' => $handle,
+                        ]
+                    ),
                 ];
             })
+            ->values();
+    }
+
+/**
+ * Add Sizzzlingo affiliate reference to an external URL.
+ */
+private function addAffiliateReference(string $url): string
+{
+    $affiliateRef = trim(
+        (string) config(
+            'services.sizzlingo.affiliate_ref'
+        )
+    );
+
+    if ($affiliateRef === '') {
+        return $url;
+    }
+
+    /*
+     * URL mein pehle se ref parameter ho to duplicate na karo.
+     */
+    if (
+        preg_match('/([?&])ref=/i', $url) === 1
+    ) {
+        return preg_replace(
+            '/([?&])ref=[^&]*/i',
+            '$1ref=' . rawurlencode($affiliateRef),
+            $url
+        );
+    }
+
+    $separator = str_contains($url, '?')
+        ? '&'
+        : '?';
+
+    return $url
+        . $separator
+        . http_build_query(
+            [
+                'ref' => $affiliateRef,
+            ],
+            '',
+            '&',
+            PHP_QUERY_RFC3986
+        );
+}
+
+
+   /**
+ * Format selected collection and products.
+ */
+private function formatCollectionProducts(
+    array $rawCollection
+): array {
+    $storeUrl = $this->getStoreUrl();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sizzzlingo affiliate reference
+    |--------------------------------------------------------------------------
+    */
+
+    $affiliateRef = trim(
+        (string) config(
+            'services.sizzlingo.affiliate_ref',
+            'SEFood10'
+        )
+    );
+
+    $rawProducts = data_get(
+        $rawCollection,
+        'products.nodes',
+        []
+    );
+
+    $products = collect(
+        is_array($rawProducts)
+            ? $rawProducts
+            : []
+    )
+        ->filter(function ($product): bool {
+            return is_array($product)
+                && !empty($product['title'])
+                && !empty($product['handle']);
+        })
+        ->map(function ($product) use (
+            $storeUrl,
+            $affiliateRef
+        ): array {
+            $title = trim(
+                (string) (
+                    $product['title'] ?? ''
+                )
+            );
+
+            $handle = strtolower(
+                trim(
+                    (string) (
+                        $product['handle'] ?? ''
+                    ),
+                    '/'
+                )
+            );
+
+            $imageUrl = data_get(
+                $product,
+                'featuredImage.url'
+            );
+
+            $imageAlt = data_get(
+                $product,
+                'featuredImage.altText'
+            );
+
+            $minimumAmount = (float) data_get(
+                $product,
+                'priceRange.minVariantPrice.amount',
+                0
+            );
+
+            $maximumAmount = (float) data_get(
+                $product,
+                'priceRange.maxVariantPrice.amount',
+                $minimumAmount
+            );
+
+            $currencyCode = strtoupper(
+                (string) data_get(
+                    $product,
+                    'priceRange.minVariantPrice.currencyCode',
+                    'AUD'
+                )
+            );
+
+            $compareAtAmount = data_get(
+                $product,
+                'variants.nodes.0.compareAtPrice.amount'
+            );
+
+            $compareAtAmount = is_numeric(
+                $compareAtAmount
+            )
+                ? (float) $compareAtAmount
+                : null;
+
+            $isOnSale =
+                $compareAtAmount !== null
+                && $compareAtAmount > $minimumAmount;
+
+            $hasPriceRange = abs(
+                $maximumAmount - $minimumAmount
+            ) > 0.009;
 
             /*
-             * Reference design mein six collection cards hain.
-             * Sab collections dikhani hon to take(6) remove kar dena.
-             */
-            ->take(6)
-            ->values();
+            |--------------------------------------------------------------------------
+            | Original Shopify product URL
+            |--------------------------------------------------------------------------
+            */
+
+            $onlineStoreUrl = data_get(
+                $product,
+                'onlineStoreUrl'
+            );
+
+            $productUrl = is_string($onlineStoreUrl)
+                && trim($onlineStoreUrl) !== ''
+                    ? trim($onlineStoreUrl)
+                    : $storeUrl
+                        . '/products/'
+                        . rawurlencode($handle);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Add affiliate reference
+            |--------------------------------------------------------------------------
+            |
+            | Example:
+            |
+            | /products/russian-salad-300g?ref=SEFood10
+            |
+            */
+
+            if ($affiliateRef !== '') {
+                /*
+                 * URL fragment temporarily separate karo.
+                 */
+                $fragment = '';
+
+                $fragmentPosition = strpos(
+                    $productUrl,
+                    '#'
+                );
+
+                if ($fragmentPosition !== false) {
+                    $fragment = substr(
+                        $productUrl,
+                        $fragmentPosition
+                    );
+
+                    $productUrl = substr(
+                        $productUrl,
+                        0,
+                        $fragmentPosition
+                    );
+                }
+
+                /*
+                 * Agar ref already exist karta hai,
+                 * uski value replace karo.
+                 */
+                if (
+                    preg_match(
+                        '/([?&])ref=[^&#]*/i',
+                        $productUrl
+                    ) === 1
+                ) {
+                    $productUrl = preg_replace(
+                        '/([?&])ref=[^&#]*/i',
+                        '$1ref='
+                            . rawurlencode($affiliateRef),
+                        $productUrl
+                    );
+                } else {
+                    /*
+                     * Existing query string ho to &,
+                     * otherwise ? use karo.
+                     */
+                    if (strpos($productUrl, '?') !== false) {
+                        $lastCharacter = substr(
+                            $productUrl,
+                            -1
+                        );
+
+                        $separator = in_array(
+                            $lastCharacter,
+                            ['?', '&'],
+                            true
+                        )
+                            ? ''
+                            : '&';
+                    } else {
+                        $separator = '?';
+                    }
+
+                    $productUrl .= $separator
+                        . http_build_query(
+                            [
+                                'ref' => $affiliateRef,
+                            ],
+                            '',
+                            '&',
+                            PHP_QUERY_RFC3986
+                        );
+                }
+
+                /*
+                 * Fragment wapas URL ke end mein add karo.
+                 */
+                $productUrl .= $fragment;
+            }
+
+            return [
+                'id' => $product['id'] ?? null,
+
+                'title' => $title,
+
+                'handle' => $handle,
+
+                'description' => trim(
+                    (string) (
+                        $product['description'] ?? ''
+                    )
+                ),
+
+                'available' => (bool) (
+                    $product['availableForSale']
+                    ?? false
+                ),
+
+                'image' => is_string($imageUrl)
+                    && $imageUrl !== ''
+                        ? $imageUrl
+                        : null,
+
+                'image_alt' => is_string($imageAlt)
+                    && $imageAlt !== ''
+                        ? $imageAlt
+                        : $title,
+
+                'price_label' => $hasPriceRange
+                    ? 'From '
+                        . $this->formatStorefrontMoney(
+                            $minimumAmount,
+                            $currencyCode
+                        )
+                    : $this->formatStorefrontMoney(
+                        $minimumAmount,
+                        $currencyCode
+                    ),
+
+                'compare_at_price' => $isOnSale
+                    ? $this->formatStorefrontMoney(
+                        $compareAtAmount,
+                        $currencyCode
+                    )
+                    : null,
+
+                'on_sale' => $isOnSale,
+
+                /*
+                 * Shopify URL with affiliate reference.
+                 */
+                'url' => $productUrl,
+            ];
+        })
+        ->values();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Collection data
+    |--------------------------------------------------------------------------
+    */
+
+    $collectionTitle = trim(
+        (string) (
+            $rawCollection['title'] ?? ''
+        )
+    );
+
+    $collectionDescription = trim(
+        (string) (
+            $rawCollection['description'] ?? ''
+        )
+    );
+
+    $collectionImage = data_get(
+        $rawCollection,
+        'image.url'
+    );
+
+    $collectionImageAlt = data_get(
+        $rawCollection,
+        'image.altText'
+    );
+
+    $seoTitle = trim(
+        (string) data_get(
+            $rawCollection,
+            'seo.title',
+            ''
+        )
+    );
+
+    $seoDescription = trim(
+        (string) data_get(
+            $rawCollection,
+            'seo.description',
+            ''
+        )
+    );
+
+    return [
+        'id' => $rawCollection['id'] ?? null,
+
+        'title' => $collectionTitle,
+
+        'handle' => trim(
+            (string) (
+                $rawCollection['handle'] ?? ''
+            )
+        ),
+
+        'description' => $collectionDescription,
+
+        'image' => is_string($collectionImage)
+            && $collectionImage !== ''
+                ? $collectionImage
+                : null,
+
+        'image_alt' =>
+            is_string($collectionImageAlt)
+            && $collectionImageAlt !== ''
+                ? $collectionImageAlt
+                : $collectionTitle,
+
+        'seo_title' => $seoTitle !== ''
+            ? $seoTitle
+            : $collectionTitle,
+
+        'seo_description' =>
+            $seoDescription !== ''
+                ? $seoDescription
+                : $collectionDescription,
+
+        'products' => $products,
+
+        'products_count' => $products->count(),
+    ];
+}
+    /**
+     * Validate Australia-only region.
+     */
+    private function validateRegion(
+        string $region
+    ): string {
+        $region = strtolower(
+            trim($region)
+        );
+
+        abort_unless(
+            $region === 'au',
+            404
+        );
+
+        return $region;
+    }
+
+    /**
+     * Format Shopify money.
+     */
+    private function formatStorefrontMoney(
+        float $amount,
+        string $currencyCode
+    ): string {
+        $symbols = [
+            'AUD' => 'A$',
+            'USD' => '$',
+            'NZD' => 'NZ$',
+            'GBP' => '£',
+            'EUR' => '€',
+        ];
+
+        $prefix = $symbols[$currencyCode]
+            ?? $currencyCode . ' ';
+
+        return $prefix . number_format(
+            $amount,
+            2
+        );
     }
 
     /**

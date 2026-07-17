@@ -100,11 +100,24 @@ Route::group([
     Route::get('/', [HomeController::class, 'index'])->name('region.home');
 
     // Sizzzlingo landing page - Australia only
-  Route::get('/sizzlingo-meals', [SizzlingoController::class, 'index'])
-        ->where('region', 'au')
-        ->name('region.sizzlingo.meals');
+        Route::get(
+            '/sizzlingo-meals/collection/{handle}',
+            [SizzlingoController::class, 'showCollection']
+        )
+            ->where('region', 'au')
+            ->where('handle', '[A-Za-z0-9\-]+')
+            ->name('region.sizzlingo.collection');
 
-    Route::get('/about-us', [HomeController::class, 'aboutUs'])->name('region.aboutUs');
+        Route::get(
+            '/sizzlingo-meals',
+            [SizzlingoController::class, 'index']
+        )
+            ->where('region', 'au')
+            ->name('region.sizzlingo.meals');
+
+            // Sizzzlingo landing page - Australia only
+
+            Route::get('/about-us', [HomeController::class, 'aboutUs'])->name('region.aboutUs');
 
     Route::get('/privacy-policy', [HomeController::class, 'privacy'])->name('region.privacyPolicy');
     Route::get('/affiliate-disclaimer', [HomeController::class, 'affiliate'])->name('region.affiliateDisclaimer');

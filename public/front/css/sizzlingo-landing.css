@@ -106,21 +106,17 @@
 }
 
 .sz-button-primary {
-    background: linear-gradient(
-        135deg,
-        var(--sz-orange),
-        #ff8709
-    );
+    background: linear-gradient(135deg,
+            var(--sz-orange),
+            #ff8709);
     color: #fff;
     box-shadow: 0 12px 28px rgba(255, 104, 28, 0.26);
 }
 
 .sz-button-primary:hover {
-    background: linear-gradient(
-        135deg,
-        var(--sz-orange-dark),
-        var(--sz-orange)
-    );
+    background: linear-gradient(135deg,
+            var(--sz-orange-dark),
+            var(--sz-orange));
     color: #fff;
 }
 
@@ -158,129 +154,247 @@
 }
 
 /* ==============================================================
-   Hero
+   Hero with background video
    ============================================================== */
 
 .sz-hero {
     position: relative;
-    min-height: 670px;
-    display: flex;
-    align-items: center;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    min-height: clamp(680px, 78vh, 810px);
     overflow: hidden;
-    background: var(--sz-navy);
+    isolation: isolate;
+    background: #071225;
 }
+
+/*
+|--------------------------------------------------------------------------
+| Background video
+|--------------------------------------------------------------------------
+*/
 
 .sz-hero-background {
     position: absolute;
+    z-index: -3;
     inset: 0;
+    display: block;
     width: 100%;
     height: 100%;
+    border: 0;
     object-fit: cover;
-    object-position: center;
+    object-position: center center;
+    pointer-events: none;
 }
+
+/*
+|--------------------------------------------------------------------------
+| Dark overlay
+|--------------------------------------------------------------------------
+*/
 
 .sz-hero-overlay {
     position: absolute;
+    z-index: -2;
     inset: 0;
-    background:
-        linear-gradient(
-            90deg,
-            rgba(5, 14, 29, 0.97) 0%,
-            rgba(8, 18, 35, 0.85) 43%,
-            rgba(8, 18, 35, 0.38) 100%
-        ),
-        linear-gradient(
-            0deg,
-            rgba(6, 15, 31, 0.45),
-            rgba(6, 15, 31, 0.15)
-        );
+    background: linear-gradient(90deg, rgb(4 11 24 / 0%) 0%, rgb(5 13 28 / 52%) 45%, rgb(4 11 24 / 0%) 100%), linear-gradient(0deg, rgba(3, 9, 20, 0.35), rgba(3, 9, 20, 0.2));
 }
+
+/*
+ * Slight central glow so text stays readable
+ * without making the whole video too dark.
+ */
+.sz-hero::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background: radial-gradient(circle at center,
+            rgba(15, 24, 39, 0.05) 0%,
+            rgba(4, 11, 24, 0.16) 48%,
+            rgba(4, 11, 24, 0.35) 100%);
+    pointer-events: none;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Center content
+|--------------------------------------------------------------------------
+*/
 
 .sz-hero-inner {
     position: relative;
     z-index: 2;
-    padding: 75px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: 1080px;
+    padding: 95px 0 120px;
+    text-align: center;
 }
+
+/*
+|--------------------------------------------------------------------------
+| Top partner pill
+|--------------------------------------------------------------------------
+*/
 
 .sz-partner-pill {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 9px;
-    margin-bottom: 24px;
-    padding: 9px 17px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    width: fit-content;
+    margin: 0 auto 25px;
+    padding: 8px 17px;
+    border: 1px solid rgba(255, 255, 255, 0.42);
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.11);
+    background: rgba(255, 255, 255, 0.13);
     color: #fff;
     font-size: 12px;
     font-weight: 700;
-    backdrop-filter: blur(8px);
+    line-height: 1.2;
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.12);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .sz-partner-pill i {
     color: var(--sz-orange);
 }
 
+/*
+|--------------------------------------------------------------------------
+| Main heading
+|--------------------------------------------------------------------------
+*/
+
 .sz-hero h1 {
-    max-width: 800px;
+    width: 100%;
+    max-width: 1060px;
     margin: 0;
     color: #fff;
-    font-size: clamp(48px, 6vw, 78px);
+    font-size: clamp(52px, 5vw, 78px);
     font-weight: 850;
     line-height: 0.98;
     letter-spacing: -3px;
+    text-align: center;
+    text-wrap: balance;
+    text-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
 }
 
 .sz-hero h1 span {
     color: var(--sz-orange);
 }
 
+/*
+|--------------------------------------------------------------------------
+| Description
+|--------------------------------------------------------------------------
+*/
+
 .sz-hero-description {
-    max-width: 670px;
-    margin: 25px 0 30px;
-    color: rgba(255, 255, 255, 0.82);
+    width: 100%;
+    max-width: 720px;
+    margin: 27px auto 30px;
+    color: rgba(255, 255, 255, 0.88);
     font-size: 18px;
-    line-height: 1.65;
+    font-weight: 400;
+    line-height: 1.55;
+    text-align: center;
+    text-shadow: 0 3px 18px rgba(0, 0, 0, 0.32);
 }
+
+/*
+|--------------------------------------------------------------------------
+| Buttons
+|--------------------------------------------------------------------------
+*/
 
 .sz-hero-actions {
     display: flex;
+    align-items: center;
+    justify-content: center;
     flex-wrap: wrap;
     gap: 13px;
+    width: 100%;
 }
+
+.sz-hero-actions .sz-button {
+    min-height: 51px;
+    padding-inline: 26px;
+}
+
+.sz-hero-actions .sz-button-primary {
+    min-width: 172px;
+}
+
+.sz-hero-actions .sz-button-outline {
+    min-width: 255px;
+    border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.11);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Trust points
+|--------------------------------------------------------------------------
+*/
 
 .sz-hero-points {
     display: flex;
+    align-items: center;
+    justify-content: center;
     flex-wrap: wrap;
-    gap: 25px;
-    margin-top: 28px;
+    gap: 18px 28px;
+    width: 100%;
+    margin-top: 31px;
 }
 
 .sz-hero-points span {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
-    color: rgba(255, 255, 255, 0.78);
+    color: rgba(255, 255, 255, 0.87);
     font-size: 12px;
     font-weight: 600;
+    line-height: 1.2;
 }
 
 .sz-hero-points i {
     color: var(--sz-orange);
+    font-size: 13px;
 }
 
+/*
+|--------------------------------------------------------------------------
+| Featured-partner badge — bottom left
+|--------------------------------------------------------------------------
+*/
+
 .sz-halal-badge {
+    position: absolute;
+    z-index: 5;
+    bottom: 20px;
+    left: clamp(20px, 2vw, 34px);
     display: inline-flex;
     align-items: center;
-    gap: 11px;
-    margin-top: 26px;
-    padding: 8px 16px 8px 9px;
+    gap: 10px;
+    margin: 0;
+    padding: 7px 16px 7px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.62);
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.94);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.24);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .sz-halal-badge img {
+    display: block;
+    flex: 0 0 42px;
     width: 42px;
     height: 42px;
     border-radius: 50%;
@@ -290,17 +404,26 @@
 .sz-halal-badge span {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
 }
 
 .sz-halal-badge small {
-    color: var(--sz-muted);
-    font-size: 10px;
+    margin-bottom: 2px;
+    color: #7b8492;
+    font-size: 9px;
+    font-weight: 500;
     line-height: 1.1;
+    letter-spacing: 0.45px;
+    text-transform: uppercase;
 }
 
 .sz-halal-badge strong {
     color: var(--sz-navy);
-    font-size: 13px;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.15;
+    white-space: nowrap;
 }
 
 /* ==============================================================
@@ -535,11 +658,9 @@
     position: absolute;
     inset: auto 0 0;
     height: 50%;
-    background: linear-gradient(
-        0deg,
-        rgba(10, 20, 38, 0.23),
-        transparent
-    );
+    background: linear-gradient(0deg,
+            rgba(10, 20, 38, 0.23),
+            transparent);
 }
 
 .sz-collection-image img {
@@ -606,7 +727,7 @@
     text-align: center;
 }
 
-.sz-api-message > i {
+.sz-api-message>i {
     margin-bottom: 17px;
     color: var(--sz-orange);
     font-size: 38px;
@@ -644,7 +765,7 @@
     position: relative;
 }
 
-.sz-benefits-image > img {
+.sz-benefits-image>img {
     display: block;
     width: 100%;
     min-height: 570px;
@@ -826,7 +947,7 @@
     font-size: 13px;
 }
 
-.sz-testimonial-card > p {
+.sz-testimonial-card>p {
     min-height: 93px;
     margin: 0 0 20px;
     color: var(--sz-navy);
@@ -840,18 +961,16 @@
     gap: 11px;
 }
 
-.sz-customer > span {
+.sz-customer>span {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 43px;
     height: 43px;
     border-radius: 50%;
-    background: linear-gradient(
-        135deg,
-        var(--sz-orange),
-        #ffaf16
-    );
+    background: linear-gradient(135deg,
+            var(--sz-orange),
+            #ffaf16);
     color: #fff;
     font-weight: 800;
 }
@@ -929,7 +1048,7 @@
     transition: grid-template-rows 0.3s ease;
 }
 
-.sz-faq-answer > p {
+.sz-faq-answer>p {
     overflow: hidden;
     margin: 0;
     padding: 0 23px;
@@ -943,7 +1062,7 @@
     grid-template-rows: 1fr;
 }
 
-.sz-faq-answer.is-open > p {
+.sz-faq-answer.is-open>p {
     padding: 0 23px 20px;
 }
 
@@ -963,17 +1082,15 @@
     padding: 55px 30px;
     border-radius: 24px;
     background:
-        radial-gradient(
-            circle at 100% 0,
+        radial-gradient(circle at 100% 0,
             rgba(255, 104, 28, 0.2),
-            transparent 37%
-        ),
+            transparent 37%),
         var(--sz-navy);
     color: #fff;
     text-align: center;
 }
 
-.sz-final-cta > img {
+.sz-final-cta>img {
     width: 74px;
     height: 74px;
     margin-bottom: 16px;
@@ -990,7 +1107,7 @@
     letter-spacing: -1px;
 }
 
-.sz-final-cta > p {
+.sz-final-cta>p {
     max-width: 600px;
     margin: 0 auto 24px;
     color: rgba(255, 255, 255, 0.75);
@@ -1004,7 +1121,7 @@
     gap: 12px;
 }
 
-.sz-final-cta > small {
+.sz-final-cta>small {
     display: block;
     margin-top: 20px;
     color: rgba(255, 255, 255, 0.5);
@@ -1049,11 +1166,34 @@
     }
 
     .sz-hero {
-        min-height: 630px;
+        min-height: 700px;
+    }
+
+    .sz-hero-background {
+        object-position: center center;
     }
 
     .sz-hero-overlay {
-        background: rgba(7, 17, 34, 0.75);
+        background:
+            linear-gradient(90deg,
+                rgba(4, 11, 24, 0.72),
+                rgba(4, 11, 24, 0.62));
+    }
+
+    .sz-hero-inner {
+        max-width: 900px;
+        padding: 85px 0 115px;
+    }
+
+    .sz-hero h1 {
+        max-width: 860px;
+        font-size: clamp(48px, 7vw, 68px);
+        letter-spacing: -2.4px;
+    }
+
+    .sz-hero-description {
+        max-width: 680px;
+        font-size: 17px;
     }
 
     .sz-trust-grid {
@@ -1081,7 +1221,7 @@
         margin-inline: auto;
     }
 
-    .sz-benefits-image > img {
+    .sz-benefits-image>img {
         min-height: 500px;
     }
 }
@@ -1116,51 +1256,55 @@
     }
 
     .sz-hero {
-        min-height: 720px;
-        align-items: flex-end;
+        min-height: 730px;
+        place-items: center;
     }
 
     .sz-hero-background {
-        object-position: 62% center;
+        object-position: 58% center;
     }
 
     .sz-hero-overlay {
         background:
-            linear-gradient(
-                0deg,
-                rgba(6, 15, 31, 0.98) 0%,
-                rgba(6, 15, 31, 0.85) 60%,
-                rgba(6, 15, 31, 0.58) 100%
-            );
+            linear-gradient(0deg,
+                rgba(4, 11, 24, 0.9) 0%,
+                rgba(4, 11, 24, 0.66) 55%,
+                rgba(4, 11, 24, 0.6) 100%);
     }
 
     .sz-hero-inner {
-        padding: 70px 0 42px;
+        justify-content: center;
+        max-width: 100%;
+        padding: 72px 0 130px;
         text-align: center;
     }
 
     .sz-partner-pill {
-        max-width: 100%;
-        justify-content: center;
-        margin-bottom: 19px;
+        max-width: calc(100vw - 42px);
+        margin-bottom: 21px;
+        padding: 8px 14px;
         font-size: 10px;
+        text-align: center;
     }
 
     .sz-hero h1 {
-        font-size: 43px;
-        line-height: 0.98;
-        letter-spacing: -1.7px;
+        max-width: 600px;
+        font-size: clamp(39px, 11vw, 51px);
+        line-height: 1;
+        letter-spacing: -1.8px;
     }
 
     .sz-hero-description {
-        margin: 21px auto 25px;
+        max-width: 520px;
+        margin: 22px auto 26px;
         font-size: 15px;
         line-height: 1.55;
     }
 
     .sz-hero-actions {
         flex-direction: column;
-        align-items: stretch;
+        align-items: center;
+        width: min(100%, 360px);
     }
 
     .sz-hero-actions .sz-button {
@@ -1169,7 +1313,8 @@
 
     .sz-hero-points {
         justify-content: center;
-        gap: 10px 16px;
+        gap: 12px 16px;
+        margin-top: 25px;
     }
 
     .sz-hero-points span {
@@ -1177,7 +1322,23 @@
     }
 
     .sz-halal-badge {
-        margin-top: 20px;
+        bottom: 18px;
+        left: 18px;
+        padding: 6px 13px 6px 7px;
+    }
+
+    .sz-halal-badge img {
+        flex-basis: 37px;
+        width: 37px;
+        height: 37px;
+    }
+
+    .sz-halal-badge small {
+        font-size: 8px;
+    }
+
+    .sz-halal-badge strong {
+        font-size: 11px;
     }
 
     .sz-trust-grid {
@@ -1219,7 +1380,7 @@
         gap: 36px;
     }
 
-    .sz-benefits-image > img {
+    .sz-benefits-image>img {
         min-height: 440px;
         border-radius: 18px;
     }
@@ -1243,7 +1404,7 @@
         font-size: 12px;
     }
 
-    .sz-testimonial-card > p {
+    .sz-testimonial-card>p {
         min-height: auto;
     }
 
@@ -1252,11 +1413,11 @@
         font-size: 13px;
     }
 
-    .sz-faq-answer > p {
+    .sz-faq-answer>p {
         padding-inline: 18px;
     }
 
-    .sz-faq-answer.is-open > p {
+    .sz-faq-answer.is-open>p {
         padding: 0 18px 18px;
     }
 
@@ -1275,16 +1436,233 @@
 }
 
 @media (max-width: 420px) {
+    .sz-hero {
+        min-height: 750px;
+    }
+
+    .sz-hero-inner {
+        padding-bottom: 125px;
+    }
+
     .sz-hero h1 {
         font-size: 38px;
+        letter-spacing: -1.4px;
     }
 
     .sz-hero-points {
         flex-direction: column;
         align-items: center;
+        gap: 10px;
+    }
+
+    .sz-halal-badge {
+        right: auto;
+        left: 15px;
+        max-width: calc(100% - 30px);
     }
 
     .sz-collection-content {
         padding-right: 54px;
     }
 }
+
+
+/* single collection css start  */
+.sizzlingo-collection-page {
+    padding: 50px 0;
+    background: #fffaf5;
+}
+
+.collection-header {
+    margin-bottom: 45px;
+    text-align: center;
+}
+
+.collection-header h1 {
+    margin: 20px 0 12px;
+    font-size: 42px;
+}
+
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 25px;
+}
+
+.product-card {
+    padding: 18px;
+    border: 1px solid #eee1d7;
+    border-radius: 18px;
+    background: #ffffff;
+}
+
+.product-card img {
+    width: 100%;
+    height: 280px;
+    object-fit: cover;
+    border-radius: 14px;
+}
+
+.product-card h2 {
+    margin: 18px 0 10px;
+    color: #222;
+    font-size: 21px;
+}
+
+.product-price {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin: 16px 0;
+}
+
+.product-price strong {
+    color: #e76f1e;
+    font-size: 20px;
+}
+
+.view-product-button {
+    display: inline-flex;
+    padding: 11px 18px;
+    border-radius: 9px;
+    background: #ec741f;
+    color: #fff;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+@media (max-width: 991px) {
+    .products-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .products-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .collection-header h1 {
+        font-size: 34px;
+    }
+}
+
+/* single collection css end  */
+
+
+/* pagination css start  */
+/* ==============================================================
+   Collections pagination
+   ============================================================== */
+
+.sz-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 45px;
+}
+
+.sz-pagination-pages {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+}
+
+.sz-pagination-link,
+.sz-pagination-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    border: 1px solid var(--sz-border);
+    background: #fff;
+    color: var(--sz-navy);
+    font-size: 13px;
+    font-weight: 800;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.sz-pagination-link {
+    gap: 8px;
+    padding: 10px 17px;
+    border-radius: 999px;
+}
+
+.sz-pagination-number {
+    width: 42px;
+    padding: 8px;
+    border-radius: 50%;
+}
+
+.sz-pagination-link:hover,
+.sz-pagination-number:hover {
+    border-color: var(--sz-orange);
+    color: var(--sz-orange);
+    transform: translateY(-2px);
+}
+
+.sz-pagination-number.is-active {
+    border-color: var(--sz-orange);
+    background: var(--sz-orange);
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(255, 104, 28, 0.22);
+}
+
+.sz-pagination-link.is-disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.sz-pagination-dots {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 25px;
+    color: var(--sz-muted);
+}
+
+.sz-pagination-summary {
+    margin: 14px 0 0;
+    color: var(--sz-muted);
+    font-size: 12px;
+    text-align: center;
+}
+
+@media (max-width: 767px) {
+    .sz-pagination {
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 35px;
+    }
+
+    .sz-pagination-pages {
+        order: -1;
+        flex: 0 0 100%;
+    }
+
+    .sz-pagination-link {
+        flex: 1;
+        max-width: 155px;
+    }
+
+    .sz-pagination-number {
+        width: 38px;
+        min-height: 38px;
+    }
+}
+
+@media (max-width: 420px) {
+    .sz-pagination-number {
+        width: 35px;
+        min-height: 35px;
+        font-size: 12px;
+    }
+}
+/* pagination css end */

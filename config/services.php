@@ -37,7 +37,10 @@ return [
         'storefront_token' => '8d6779abaae3356089849bc62613eff6',
 
         'store_url' => 'https://www.sizzzlingoexpress.com.au',
+
+         'affiliate_ref' => 'SEFood10',
     ],
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],

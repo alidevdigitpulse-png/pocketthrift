@@ -20,31 +20,36 @@
 
         <section class="sz-hero">
 
-            <img src="{{ asset('images/sizzlingo/hero-meal.webp') }}" alt="Chef-prepared halal ready meal"
-                class="sz-hero-background" width="1920" height="1000" loading="eager" fetchpriority="high">
+            {{-- Background video --}}
+            <video class="sz-hero-background" autoplay muted loop playsinline preload="metadata"
+                poster="{{ asset('images/sizzlingo/hero-meal.webp') }}" aria-hidden="true">
+                {{-- Apni actual video filename/path yahan set karo --}}
+                <source src="{{ asset('uploads/page/sizzlingo/hero-video-Bi7D3R_Z.mp4') }}" type="video/mp4">
+            </video>
 
+            {{-- Dark overlay --}}
             <div class="sz-hero-overlay"></div>
 
+            {{-- Centered hero content --}}
             <div class="sz-container sz-hero-inner">
 
                 <div class="sz-partner-pill">
                     <i class="fas fa-handshake" aria-hidden="true"></i>
-                    PocketThrift Featured Partner · Sizzzlingo
+                    PocketThrift Featured Partner · Sizzzlingo Express
                 </div>
 
                 <h1>
-                    Healthy Halal Meals,
-                    <span>Delivered</span>
-                    Across Australia
+                    Healthy Halal Meals,<br>
+                    <span>Delivered</span> Across Australia
                 </h1>
 
                 <p class="sz-hero-description">
-                    Chef-prepared, ready-to-eat halal meals from Sizzzlingo
-                    Express — recommended by PocketThrift and delivered chilled
-                    to your door.
+                    Chef-prepared, ready-to-eat halal meals from Sizzzlingo Express —
+                    recommended by PocketThrift and delivered chilled to your door.
                 </p>
 
                 <div class="sz-hero-actions">
+
                     <a href="#sz-collections" class="sz-button sz-button-primary">
                         Explore Meals
                         <i class="fas fa-arrow-right" aria-hidden="true"></i>
@@ -53,37 +58,43 @@
                     <a href="#sz-comparison" class="sz-button sz-button-outline">
                         Why PocketThrift Recommends
                     </a>
+
                 </div>
 
                 <div class="sz-hero-points">
+
                     <span>
-                        <i class="fas fa-certificate"></i>
+                        <i class="fas fa-certificate" aria-hidden="true"></i>
                         100% Halal Certified
                     </span>
 
                     <span>
-                        <i class="fas fa-clock"></i>
+                        <i class="fas fa-stopwatch" aria-hidden="true"></i>
                         Ready in 3 Minutes
                     </span>
 
                     <span>
-                        <i class="fas fa-truck"></i>
+                        <i class="fas fa-truck" aria-hidden="true"></i>
                         Australia-wide Delivery
                     </span>
-                </div>
 
-                <div class="sz-halal-badge">
-
-                    <img src="{{ asset('uploads/page/sizzlingo/sizzzlingo-logo-BM0Sz1x2.png') }}" alt="Halal certification"
-                        width="42" height="42" loading="eager">
-
-                    <span>
-                        <small>Featured Partner</small>
-                        <strong>Sizzzlingo Express</strong>
-                    </span>
                 </div>
 
             </div>
+
+            {{-- Badge bottom-left --}}
+            <div class="sz-halal-badge">
+
+                <img src="{{ asset('uploads/page/sizzlingo/sizzzlingo-logo-BM0Sz1x2.png') }}" alt="Sizzzlingo Express"
+                    width="42" height="42" loading="eager">
+
+                <span>
+                    <small>Featured Partner</small>
+                    <strong>Sizzzlingo Express</strong>
+                </span>
+
+            </div>
+
         </section>
 
         {{-- ===============================================================
@@ -308,60 +319,177 @@
             <div class="sz-container">
 
                 <div class="sz-section-heading">
-                    <span class="sz-eyebrow">Featured categories</span>
-                    <h2>Something for every appetite</h2>
+                    <span class="sz-eyebrow">
+                        Featured categories
+                    </span>
+
+                    <h2>
+                        Something for every appetite
+                    </h2>
 
                     <p>
                         From high-protein lunches to family-size dinners —
                         all halal and ready in minutes.
                     </p>
                 </div>
-                @if ($collections->isNotEmpty())
+
+                @if ($collections->count() > 0)
 
                     <div class="sz-collections-grid">
 
                         @foreach ($collections as $collection)
-                            <a href="{{ $collection['url'] }}" target="_blank" rel="nofollow sponsored noopener"
-                                class="sz-collection-card">
+                            <a href="{{ $collection['url'] }}" class="sz-collection-card">
                                 <div class="sz-collection-image">
-                                    <img src="{{ $collection['image'] ?: asset('images/sizzlingo/collection-placeholder.webp') }}"
-                                        alt="{{ $collection['image_alt'] }}" width="700" height="500"
-                                        loading="lazy">
+
+                                    <img src="{{ !empty($collection['image']) ? $collection['image'] : asset('uploads/page/sizzlingo/sizzlingo-logo.jpg') }}"
+                                        alt="{{ !empty($collection['image_alt']) ? $collection['image_alt'] : $collection['title'] }}"
+                                        width="700" height="500" loading="lazy">
                                 </div>
 
                                 <div class="sz-collection-content">
-                                    <h3>{{ $collection['title'] }}</h3>
 
-                                    <p>{{ $collection['description'] }}</p>
+                                    <h3>
+                                        {{ $collection['title'] }}
+                                    </h3>
 
-                                    <span class="sz-collection-arrow">
+                                    <p>
+                                        {{ $collection['description'] }}
+                                    </p>
+
+                                    <span class="sz-collection-arrow" aria-hidden="true">
                                         <i class="fas fa-arrow-right"></i>
                                     </span>
+
                                 </div>
                             </a>
                         @endforeach
 
                     </div>
+
+                    {{-- Pagination --}}
+                    @if ($collections->hasPages())
+
+                        @php
+                            $currentPage = $collections->currentPage();
+                            $lastPage = $collections->lastPage();
+
+                            $startPage = max(1, $currentPage - 2);
+                            $endPage = min($lastPage, $currentPage + 2);
+                        @endphp
+
+                        <nav class="sz-pagination" aria-label="Sizzzlingo collections pagination">
+
+                            {{-- Previous --}}
+                            @if ($collections->onFirstPage())
+                                <span class="sz-pagination-link is-disabled" aria-disabled="true">
+                                    <i class="fas fa-chevron-left"></i>
+                                    Previous
+                                </span>
+                            @else
+                                <a href="{{ $collections->previousPageUrl() }}#sz-collections" class="sz-pagination-link"
+                                    rel="prev">
+                                    <i class="fas fa-chevron-left"></i>
+                                    Previous
+                                </a>
+                            @endif
+
+                            <div class="sz-pagination-pages">
+
+                                {{-- First page --}}
+                                @if ($startPage > 1)
+
+                                    <a href="{{ $collections->url(1) }}#sz-collections" class="sz-pagination-number">
+                                        1
+                                    </a>
+
+                                    @if ($startPage > 2)
+                                        <span class="sz-pagination-dots">
+                                            &hellip;
+                                        </span>
+                                    @endif
+
+                                @endif
+
+                                {{-- Nearby pages --}}
+                                @for ($page = $startPage; $page <= $endPage; $page++)
+                                    @if ($page === $currentPage)
+                                        <span class="sz-pagination-number is-active" aria-current="page">
+                                            {{ $page }}
+                                        </span>
+                                    @else
+                                        <a href="{{ $collections->url($page) }}#sz-collections"
+                                            class="sz-pagination-number">
+                                            {{ $page }}
+                                        </a>
+                                    @endif
+                                @endfor
+
+                                {{-- Last page --}}
+                                @if ($endPage < $lastPage)
+
+                                    @if ($endPage < $lastPage - 1)
+                                        <span class="sz-pagination-dots">
+                                            &hellip;
+                                        </span>
+                                    @endif
+
+                                    <a href="{{ $collections->url($lastPage) }}#sz-collections"
+                                        class="sz-pagination-number">
+                                        {{ $lastPage }}
+                                    </a>
+
+                                @endif
+
+                            </div>
+
+                            {{-- Next --}}
+                            @if ($collections->hasMorePages())
+                                <a href="{{ $collections->nextPageUrl() }}#sz-collections" class="sz-pagination-link"
+                                    rel="next">
+                                    Next
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            @else
+                                <span class="sz-pagination-link is-disabled" aria-disabled="true">
+                                    Next
+                                    <i class="fas fa-chevron-right"></i>
+                                </span>
+                            @endif
+
+                        </nav>
+
+                        <p class="sz-pagination-summary">
+                            Showing
+                            {{ $collections->firstItem() }}
+                            to
+                            {{ $collections->lastItem() }}
+                            of
+                            {{ $collections->total() }}
+                            collections
+                        </p>
+
+                    @endif
                 @else
                     <div class="sz-api-message">
-                        <h3>Collections are temporarily unavailable</h3>
+
+                        <h3>
+                            Collections are temporarily unavailable
+                        </h3>
 
                         <p>
                             Sizzzlingo collections could not be loaded right now.
                         </p>
 
                         @if (!empty($collectionsError))
-                            <pre style="white-space: pre-wrap;">
-                {{ $collectionsError }}
-            </pre>
+                            <pre style="white-space: pre-wrap;">{{ $collectionsError }}</pre>
                         @endif
+
                     </div>
 
                 @endif
 
             </div>
         </section>
-
         {{-- ===============================================================
          Benefits
     ================================================================ --}}
@@ -371,8 +499,8 @@
             <div class="sz-container sz-benefits-grid">
 
                 <div class="sz-benefits-image">
-                    <img src="{{ asset('/uploads/page/sizzlingo/benefits-meal-FbrF5BY_.jpg') }}" alt="Preparing a fresh halal ready meal"
-                        width="900" height="900" loading="lazy">
+                    <img src="{{ asset('/uploads/page/sizzlingo/benefits-meal-FbrF5BY_.jpg') }}"
+                        alt="Preparing a fresh halal ready meal" width="900" height="900" loading="lazy">
 
                     <div class="sz-image-badge">
                         <i class="fas fa-certificate"></i>
