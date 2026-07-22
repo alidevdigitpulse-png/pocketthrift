@@ -437,7 +437,7 @@
 
 .sz-trust-grid {
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .sz-trust-item {
@@ -765,12 +765,14 @@
     position: relative;
 }
 
-.sz-benefits-image>img {
+.sz-benefits-video {
     display: block;
     width: 100%;
-    min-height: 570px;
+    height: 650px;
     border-radius: 24px;
     object-fit: cover;
+    object-position: center;
+    background: var(--sz-navy);
     box-shadow: var(--sz-shadow);
 }
 
@@ -1221,8 +1223,8 @@
         margin-inline: auto;
     }
 
-    .sz-benefits-image>img {
-        min-height: 500px;
+    .sz-benefits-video {
+        height: 500px;
     }
 }
 
@@ -1380,8 +1382,8 @@
         gap: 36px;
     }
 
-    .sz-benefits-image>img {
-        min-height: 440px;
+    .sz-benefits-video {
+        height: 440px;
         border-radius: 18px;
     }
 
@@ -1436,6 +1438,10 @@
 }
 
 @media (max-width: 420px) {
+    .sz-benefits-video {
+        height: 380px;
+    }
+
     .sz-hero {
         min-height: 750px;
     }
@@ -1665,4 +1671,1392 @@
         font-size: 12px;
     }
 }
+
 /* pagination css end */
+
+
+
+/* =========================================================
+   SIZZLINGO PREMIUM OFFER BANNER
+========================================================= */
+
+.sz-campaign-section {
+    padding: 92px 0px 92px 0px;
+    background: #ffffff;
+}
+
+.sz-campaign-banner {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(420px, 0.95fr);
+    align-items: center;
+    gap: 45px;
+    min-height: 525px;
+    padding: 60px 65px;
+    overflow: hidden;
+    background:
+        linear-gradient(125deg,
+            #a91f12 0%,
+            #c63215 35%,
+            #e64a19 67%,
+            #f47b43 100%);
+    border-radius: 30px;
+    box-shadow: 0 26px 60px rgba(173, 46, 18, 0.19);
+    isolation: isolate;
+}
+
+/* Decorative background */
+
+.sz-campaign-banner::before {
+    content: "";
+    position: absolute;
+    top: -170px;
+    left: 42%;
+    z-index: -2;
+    width: 330px;
+    height: 760px;
+    background: rgba(255, 255, 255, 0.06);
+    transform: rotate(19deg);
+}
+
+.sz-campaign-banner::after {
+    content: "";
+    position: absolute;
+    right: -130px;
+    bottom: -235px;
+    z-index: -2;
+    width: 430px;
+    height: 430px;
+    border: 75px solid rgba(255, 194, 119, 0.16);
+    border-radius: 50%;
+}
+
+.sz-campaign-circle {
+    position: absolute;
+    z-index: -1;
+    display: block;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.sz-circle-one {
+    top: -95px;
+    left: -80px;
+    width: 235px;
+    height: 235px;
+    background: rgba(103, 14, 8, 0.19);
+}
+
+.sz-circle-two {
+    top: 80px;
+    right: 85px;
+    width: 85px;
+    height: 85px;
+    background: rgba(255, 203, 139, 0.22);
+}
+
+.sz-circle-three {
+    bottom: 48px;
+    left: 48%;
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.11);
+}
+
+.sz-campaign-glow {
+    position: absolute;
+    top: 50%;
+    right: 18%;
+    z-index: -1;
+    width: 340px;
+    height: 340px;
+    background: rgba(255, 174, 96, 0.23);
+    border-radius: 50%;
+    filter: blur(20px);
+    transform: translateY(-50%);
+}
+
+/* Left content */
+
+.sz-campaign-content {
+    position: relative;
+    z-index: 3;
+    max-width: 650px;
+}
+
+.sz-campaign-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 22px;
+    padding: 7px 15px 7px 8px;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.65px;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.11);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 50px;
+    backdrop-filter: blur(8px);
+}
+
+.sz-eyebrow-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 27px;
+    height: 27px;
+    color: #c23117;
+    background: #ffffff;
+    border-radius: 50%;
+}
+
+.sz-campaign-content h2 {
+    max-width: 690px;
+    margin: 0;
+    color: #ffffff;
+    font-size: clamp(45px, 4.4vw, 66px);
+    font-weight: 900;
+    letter-spacing: -2.5px;
+    line-height: 1;
+}
+
+.sz-campaign-content h2 span {
+    display: block;
+    margin-top: 9px;
+    color: #ffe2a3;
+}
+
+.sz-campaign-content>p {
+    max-width: 580px;
+    margin: 22px 0 0;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 17px;
+    line-height: 1.7;
+}
+
+.sz-campaign-highlights {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 22px;
+    margin-top: 29px;
+}
+
+.sz-campaign-highlight {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sz-campaign-highlight>i {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 39px;
+    height: 39px;
+    color: #ffe2a3;
+    font-size: 16px;
+    background: rgba(255, 255, 255, 0.13);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+}
+
+.sz-campaign-highlight>span {
+    display: flex;
+    flex-direction: column;
+}
+
+.sz-campaign-highlight strong {
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.sz-campaign-highlight small {
+    margin-top: 2px;
+    color: rgba(255, 255, 255, 0.66);
+    font-size: 10px;
+}
+
+.sz-campaign-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    min-height: 56px;
+    margin-top: 34px;
+    padding: 8px 9px 8px 23px;
+    color: #af2915;
+    font-size: 13px;
+    font-weight: 900;
+    text-decoration: none;
+    text-transform: uppercase;
+    background: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 14px 28px rgba(90, 18, 8, 0.2);
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.sz-campaign-cta span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 39px;
+    height: 39px;
+    color: #ffffff;
+    background: linear-gradient(135deg, #c73216, #f16a31);
+    border-radius: 11px;
+}
+
+.sz-campaign-cta:hover {
+    color: #af2915;
+    text-decoration: none;
+    transform: translateY(-3px);
+    box-shadow: 0 19px 34px rgba(90, 18, 8, 0.28);
+}
+
+.sz-campaign-cta:hover span i {
+    transform: translateX(3px);
+}
+
+.sz-campaign-cta span i {
+    transition: transform 0.25s ease;
+}
+
+/* Offer area */
+
+.sz-campaign-offer {
+    position: relative;
+    z-index: 3;
+    min-height: 410px;
+}
+
+.sz-offer-floating-label {
+    position: absolute;
+    top: 6px;
+    left: 18px;
+    z-index: 4;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 16px;
+    color: #bd3117;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.55px;
+    text-transform: uppercase;
+    background: #fff4ed;
+    border-radius: 12px;
+    box-shadow: 0 15px 28px rgba(105, 25, 10, 0.17);
+    transform: rotate(-5deg);
+}
+
+/* Coupon ticket */
+
+.sz-ticket-card {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: min(100%, 425px);
+    padding: 31px 32px 29px;
+    background:
+        linear-gradient(145deg,
+            rgba(255, 255, 255, 0.99),
+            rgba(255, 247, 241, 0.97));
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 26px;
+    box-shadow: 0 28px 55px rgba(97, 25, 10, 0.27);
+    transform: translate(-50%, -50%) rotate(2deg);
+}
+
+.sz-ticket-card::before {
+    content: "";
+    position: absolute;
+    inset: 9px;
+    pointer-events: none;
+    border: 1px solid rgba(205, 68, 31, 0.11);
+    border-radius: 19px;
+}
+
+.sz-ticket-cut {
+    position: absolute;
+    left: -15px;
+    z-index: 2;
+    width: 30px;
+    height: 30px;
+    background: #dc451b;
+    border-radius: 50%;
+}
+
+.sz-ticket-cut-top {
+    top: 54%;
+    transform: translateY(-50%);
+}
+
+.sz-ticket-cut-bottom {
+    right: -15px;
+    left: auto;
+    top: 54%;
+    transform: translateY(-50%);
+}
+
+.sz-ticket-top {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.sz-ticket-percent {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    flex: 0 0 92px;
+    width: 92px;
+    height: 92px;
+    padding-top: 20px;
+    color: #ffffff;
+    background:
+        linear-gradient(145deg, #a91f12, #e44919 70%, #f67b40);
+    border-radius: 28px 28px 28px 12px;
+    box-shadow: 0 15px 28px rgba(194, 48, 19, 0.28);
+}
+
+.sz-ticket-percent span {
+    font-size: 42px;
+    font-weight: 900;
+    letter-spacing: -2px;
+    line-height: 1;
+}
+
+.sz-ticket-percent small {
+    margin: 4px 0 0 2px;
+    font-size: 17px;
+    font-weight: 900;
+}
+
+.sz-ticket-heading {
+    min-width: 0;
+}
+
+.sz-ticket-heading>span {
+    display: block;
+    margin-bottom: 5px;
+    color: #b36552;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+}
+
+.sz-ticket-heading strong {
+    display: block;
+    color: #3d211a;
+    font-size: 25px;
+    font-weight: 900;
+    line-height: 1.15;
+}
+
+.sz-ticket-heading p {
+    margin: 5px 0 0;
+    color: #90746c;
+    font-size: 12px;
+}
+
+.sz-ticket-divider {
+    position: relative;
+    z-index: 2;
+    margin: 25px -32px 22px;
+}
+
+.sz-ticket-divider span {
+    display: block;
+    width: 100%;
+    border-top: 1px dashed rgba(190, 73, 40, 0.35);
+}
+
+.sz-ticket-code-area {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+}
+
+.sz-ticket-code-label {
+    display: block;
+    margin-bottom: 9px;
+    color: #9e7166;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+}
+
+.sz-ticket-code {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 57px;
+    padding: 7px 8px 7px 18px;
+    color: #b62f17;
+    font-family: inherit;
+    background: #fff0e7;
+    border: 1px dashed #e07150;
+    border-radius: 13px;
+    cursor: pointer;
+    transition:
+        background-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.sz-ticket-code strong {
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: 1.3px;
+}
+
+.sz-ticket-copy-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 41px;
+    height: 41px;
+    color: #ffffff;
+    background: linear-gradient(135deg, #bd2e14, #ee6530);
+    border-radius: 10px;
+}
+
+.sz-ticket-code:hover {
+    transform: translateY(-2px);
+    background: #ffe7db;
+}
+
+.sz-ticket-code.is-copied {
+    color: #ffffff;
+    background: #b72d16;
+    border-color: #b72d16;
+}
+
+.sz-ticket-code.is-copied .sz-ticket-copy-icon {
+    color: #b72d16;
+    background: #ffffff;
+}
+
+.sz-ticket-copy-text {
+    display: block;
+    margin-top: 8px;
+    color: #aa8c83;
+    font-size: 9px;
+}
+
+/* Mini floating cards */
+
+.sz-offer-mini-card {
+    position: absolute;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 16px;
+    background: rgba(255, 250, 246, 0.97);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    border-radius: 15px;
+    box-shadow: 0 16px 30px rgba(99, 24, 9, 0.18);
+}
+
+.sz-offer-mini-card>span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 35px;
+    height: 35px;
+    color: #d6411d;
+    background: #ffe8dd;
+    border-radius: 10px;
+}
+
+.sz-offer-mini-card>div {
+    display: flex;
+    flex-direction: column;
+}
+
+.sz-offer-mini-card small {
+    color: #ab8e85;
+    font-size: 9px;
+}
+
+.sz-offer-mini-card strong {
+    margin-top: 2px;
+    color: #47271f;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.sz-mini-card-one {
+    right: -5px;
+    bottom: 27px;
+    transform: rotate(-4deg);
+}
+
+.sz-mini-card-two {
+    bottom: 4px;
+    left: -13px;
+    transform: rotate(5deg);
+}
+
+/* Tablet */
+
+@media (max-width: 1100px) {
+    .sz-campaign-banner {
+        grid-template-columns: minmax(0, 1fr) 390px;
+        gap: 25px;
+        padding: 50px 40px;
+    }
+
+    .sz-campaign-content h2 {
+        font-size: 49px;
+    }
+
+    .sz-ticket-card {
+        width: 375px;
+    }
+}
+
+/* Smaller tablet */
+
+@media (max-width: 900px) {
+    .sz-campaign-banner {
+        grid-template-columns: 1fr;
+        padding: 48px 35px;
+    }
+
+    .sz-campaign-content {
+        max-width: 720px;
+        margin: 0 auto;
+        text-align: center;
+    }
+
+    .sz-campaign-content>p {
+        margin-right: auto;
+        margin-left: auto;
+    }
+
+    .sz-campaign-highlights {
+        justify-content: center;
+    }
+
+    .sz-campaign-offer {
+        width: 100%;
+        max-width: 560px;
+        min-height: 410px;
+        margin: 30px auto 0;
+    }
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+    .sz-campaign-section {
+        padding: 22px 0;
+    }
+
+    .sz-campaign-banner {
+        padding: 34px 19px 38px;
+        border-radius: 22px;
+    }
+
+    .sz-campaign-eyebrow {
+        font-size: 9px;
+    }
+
+    .sz-campaign-content h2 {
+        font-size: 36px;
+        letter-spacing: -1.5px;
+    }
+
+    .sz-campaign-content>p {
+        margin-top: 17px;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .sz-campaign-highlights {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 13px;
+    }
+
+    .sz-campaign-highlight {
+        padding: 11px;
+        text-align: left;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+    }
+
+    .sz-campaign-highlight:last-child {
+        grid-column: 1 / -1;
+        justify-content: center;
+    }
+
+    .sz-campaign-cta {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .sz-campaign-offer {
+        min-height: 395px;
+        margin-top: 18px;
+    }
+
+    .sz-ticket-card {
+        width: calc(100% - 8px);
+        padding: 25px 20px;
+        transform: translate(-50%, -50%) rotate(1deg);
+    }
+
+    .sz-ticket-top {
+        gap: 13px;
+    }
+
+    .sz-ticket-percent {
+        flex-basis: 75px;
+        width: 75px;
+        height: 75px;
+        padding-top: 17px;
+        border-radius: 22px 22px 22px 10px;
+    }
+
+    .sz-ticket-percent span {
+        font-size: 33px;
+    }
+
+    .sz-ticket-percent small {
+        font-size: 13px;
+    }
+
+    .sz-ticket-heading strong {
+        font-size: 20px;
+    }
+
+    .sz-ticket-divider {
+        margin-right: -20px;
+        margin-left: -20px;
+    }
+
+    .sz-ticket-code strong {
+        font-size: 13px;
+        letter-spacing: 0.7px;
+    }
+
+    .sz-offer-floating-label {
+        top: 5px;
+        left: 3px;
+    }
+
+    .sz-mini-card-one {
+        right: -5px;
+        bottom: 11px;
+    }
+
+    .sz-mini-card-two {
+        display: none;
+    }
+}
+
+@media (max-width: 390px) {
+    .sz-campaign-content h2 {
+        font-size: 31px;
+    }
+
+    .sz-campaign-highlight strong {
+        font-size: 11px;
+    }
+
+    .sz-campaign-highlight small {
+        font-size: 9px;
+    }
+
+    .sz-ticket-heading strong {
+        font-size: 18px;
+    }
+}
+
+
+
+/* =========================================================
+   SIZZLINGO BLOG GRID
+========================================================= */
+
+.sz-blog-section {
+    padding: 85px 0;
+    background: #ffffff;
+}
+
+.sz-blog-heading {
+    max-width: 720px;
+    margin: 0 auto 38px;
+    text-align: center;
+}
+
+.sz-blog-heading > span {
+    display: block;
+    margin-bottom: 7px;
+    color: #df4c08;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+    line-height: 1.4;
+    text-transform: uppercase;
+}
+
+.sz-blog-heading h2 {
+    margin: 0;
+    color: #0d2040;
+    font-size: clamp(31px, 4vw, 43px);
+    font-weight: 900;
+    letter-spacing: -1.4px;
+    line-height: 1.12;
+}
+
+.sz-blog-heading p {
+    max-width: 600px;
+    margin: 13px auto 0;
+    color: #6c7685;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+/* Grid */
+
+.sz-blog-grid {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(275px, 305px)
+    );
+    justify-content: center;
+    gap: 24px;
+    width: 100%;
+}
+
+/* Card */
+
+.sz-blog-card {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    background: #ffffff;
+    border: 1px solid #cfd3d8;
+    border-radius: 7px;
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease,
+        border-color 0.25s ease;
+}
+
+.sz-blog-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(218, 74, 5, 0.5);
+    box-shadow: 0 14px 30px rgba(19, 35, 58, 0.11);
+}
+
+/* Image */
+
+.sz-blog-image {
+    display: block;
+    width: 100%;
+    height: 174px;
+    overflow: hidden;
+    background: #eeeeee;
+}
+
+.sz-blog-image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.35s ease;
+}
+
+.sz-blog-card:hover .sz-blog-image img {
+    transform: scale(1.04);
+}
+
+/* Category bar */
+
+.sz-blog-category {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 29px;
+    padding: 5px 10px;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+    text-align: center;
+    background: #d94b00;
+}
+
+/* Card content */
+
+.sz-blog-content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px 15px 16px;
+}
+
+.sz-blog-content h3 {
+    margin: 0 0 9px;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: -0.25px;
+    line-height: 1.28;
+}
+
+.sz-blog-content h3 a {
+    color: #111111;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.sz-blog-content h3 a:hover {
+    color: #d94b00;
+    text-decoration: none;
+}
+
+.sz-blog-content p {
+    display: -webkit-box;
+    min-height: 66px;
+    margin: 0 0 14px;
+    overflow: hidden;
+    color: #171717;
+    font-size: 13px;
+    line-height: 1.65;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+}
+
+/* Read more button */
+
+.sz-blog-read-more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    margin-top: auto;
+    padding: 8px 15px;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    text-decoration: none;
+    background: #d94b00;
+    border: 1px solid #d94b00;
+    border-radius: 7px;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.sz-blog-read-more:hover {
+    color: #ffffff;
+    text-decoration: none;
+    background: #b93f00;
+    border-color: #b93f00;
+    transform: translateY(-1px);
+}
+
+/* Tablet */
+
+@media (max-width: 991px) {
+    .sz-blog-section {
+        padding: 70px 0;
+    }
+
+    .sz-blog-grid {
+        grid-template-columns: repeat(
+            2,
+            minmax(270px, 305px)
+        );
+    }
+}
+
+/* Mobile */
+
+@media (max-width: 650px) {
+    .sz-blog-section {
+        padding: 58px 0;
+    }
+
+    .sz-blog-heading {
+        margin-bottom: 28px;
+    }
+
+    .sz-blog-heading h2 {
+        font-size: 30px;
+    }
+
+    .sz-blog-heading p {
+        font-size: 13px;
+    }
+
+    .sz-blog-grid {
+        grid-template-columns: minmax(0, 360px);
+        gap: 20px;
+    }
+
+    .sz-blog-image {
+        height: 195px;
+    }
+}
+
+@media (max-width: 400px) {
+    .sz-blog-heading h2 {
+        font-size: 27px;
+    }
+
+    .sz-blog-image {
+        height: 180px;
+    }
+
+    .sz-blog-content h3 {
+        font-size: 17px;
+    }
+}
+
+
+/* =========================================================
+   Exclusive SizzlinGo Offers
+========================================================= */
+
+.szx-exclusive-offers {
+    position: relative;
+    overflow: hidden;
+    padding: 90px 0;
+    background:
+        radial-gradient(
+            circle at 92% 8%,
+            rgba(239, 99, 31, 0.13),
+            transparent 34%
+        ),
+        linear-gradient(
+            180deg,
+            #fffaf7 0%,
+            #ffffff 100%
+        );
+}
+
+.szx-exclusive-offers::before {
+    content: "";
+    position: absolute;
+    top: -160px;
+    left: -160px;
+    width: 350px;
+    height: 350px;
+    border-radius: 50%;
+    background: rgba(239, 99, 31, 0.07);
+    pointer-events: none;
+}
+
+.szx-exclusive-offers__heading {
+    position: relative;
+    z-index: 2;
+    max-width: 750px;
+    margin: 0 auto 45px;
+    text-align: center;
+}
+
+.szx-exclusive-offers__eyebrow {
+    display: inline-block;
+    margin-bottom: 12px;
+    color: #ef631f;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    line-height: 1.4;
+    text-transform: uppercase;
+}
+
+.szx-exclusive-offers__heading h2 {
+    margin: 0 0 15px;
+    color: #1b1b1b;
+    font-size: clamp(34px, 4vw, 50px);
+    font-weight: 800;
+    line-height: 1.12;
+}
+
+.szx-exclusive-offers__heading p {
+    max-width: 680px;
+    margin: 0 auto;
+    color: #686868;
+    font-size: 17px;
+    line-height: 1.7;
+}
+
+.szx-offers-grid {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+}
+
+.szx-offer-card {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid rgba(26, 26, 26, 0.08);
+    border-radius: 22px;
+    background: #ffffff;
+    box-shadow: 0 12px 35px rgba(20, 20, 20, 0.07);
+    transition:
+        transform 0.25s ease,
+        border-color 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.szx-offer-card:hover {
+    transform: translateY(-7px);
+    border-color: rgba(239, 99, 31, 0.33);
+    box-shadow: 0 20px 48px rgba(20, 20, 20, 0.12);
+}
+
+.szx-offer-card__header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 104px;
+    padding: 22px;
+    overflow: hidden;
+    background: linear-gradient(
+        135deg,
+        #fff0e7 0%,
+        #fff9f5 100%
+    );
+}
+
+.szx-offer-card__header::after {
+    content: "";
+    position: absolute;
+    top: -45px;
+    right: -30px;
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    background: rgba(239, 99, 31, 0.09);
+    pointer-events: none;
+}
+
+.szx-offer-card__icon {
+    position: relative;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 58px;
+    height: 58px;
+    flex: 0 0 58px;
+    border-radius: 16px;
+    color: #ffffff;
+    font-size: 23px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.13);
+}
+
+.szx-offer-card__icon.is-code {
+    background: #1d1d1d;
+}
+
+.szx-offer-card__icon.is-deal {
+    background: #ef631f;
+}
+
+.szx-offer-card__type {
+    position: relative;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    padding: 8px 12px;
+    border-radius: 999px;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.szx-offer-card__type.is-code {
+    background: #1d1d1d;
+}
+
+.szx-offer-card__type.is-deal {
+    background: #ef631f;
+}
+
+.szx-offer-card__body {
+    display: flex;
+    min-height: 325px;
+    flex: 1;
+    flex-direction: column;
+    padding: 25px 22px 22px;
+}
+
+.szx-offer-card__discount {
+    margin-bottom: 9px;
+    color: #ef631f;
+    font-size: 24px;
+    font-weight: 900;
+    line-height: 1.2;
+}
+
+.szx-offer-card__body h3 {
+    display: -webkit-box;
+    min-height: 55px;
+    margin: 0 0 18px;
+    overflow: hidden;
+    color: #1d1d1d;
+    font-size: 18px;
+    font-weight: 750;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.szx-offer-card__meta {
+    display: flex;
+    gap: 9px;
+    flex-direction: column;
+    margin-bottom: 22px;
+    color: #777777;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.szx-offer-card__meta span {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.szx-offer-card__meta i {
+    width: 16px;
+    color: #ef631f;
+    text-align: center;
+}
+
+.szx-offer-card__meta .is-verified {
+    color: #318746;
+    font-weight: 700;
+}
+
+.szx-offer-card__meta .is-verified i {
+    color: #318746;
+}
+
+.szx-offer-card__action {
+    margin-top: auto;
+}
+
+.szx-offer-card__action-note {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    min-height: 22px;
+    margin-bottom: 14px;
+    color: #696969;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.szx-offer-card__action-note i {
+    width: 17px;
+    color: #ef631f;
+    font-size: 14px;
+    text-align: center;
+}
+
+.szx-offer-card__button {
+    display: inline-flex;
+    gap: 9px;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 49px;
+    padding: 12px 17px;
+    border: 1px solid #ef631f;
+    border-radius: 12px;
+    background: #ef631f;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    appearance: none;
+    transition:
+        transform 0.2s ease,
+        border-color 0.2s ease,
+        background 0.2s ease;
+}
+
+.szx-offer-card__button:hover {
+    transform: translateY(-2px);
+    border-color: #1d1d1d;
+    background: #1d1d1d;
+    color: #ffffff;
+}
+
+.szx-offer-card__button:disabled {
+    cursor: wait;
+    opacity: 0.9;
+}
+
+.szx-offer-card__button.is-copied,
+.szx-offer-card__button.is-copied:hover {
+    border-color: #268742;
+    background: #268742;
+    color: #ffffff;
+}
+
+.szx-offer-card__button i {
+    transition: transform 0.2s ease;
+}
+
+.szx-offer-card__button:hover .fa-arrow-right {
+    transform: translateX(4px);
+}
+
+.szx-exclusive-offers__footer {
+    position: relative;
+    z-index: 2;
+    margin-top: 42px;
+    text-align: center;
+}
+
+.szx-view-all-offers {
+    display: inline-flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    min-height: 54px;
+    padding: 14px 27px;
+    border: 2px solid #1d1d1d;
+    border-radius: 13px;
+    background: #1d1d1d;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.2;
+    text-decoration: none;
+    transition:
+        transform 0.2s ease,
+        border-color 0.2s ease,
+        background 0.2s ease;
+}
+
+.szx-view-all-offers:hover {
+    transform: translateY(-2px);
+    border-color: #ef631f;
+    background: #ef631f;
+    color: #ffffff;
+}
+
+.szx-view-all-offers i {
+    transition: transform 0.2s ease;
+}
+
+.szx-view-all-offers:hover i {
+    transform: translateX(4px);
+}
+
+/* Tablet */
+
+@media (max-width: 991px) {
+    .szx-exclusive-offers {
+        padding: 75px 0;
+    }
+
+    .szx-offers-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+    }
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+    .szx-exclusive-offers {
+        padding: 58px 0;
+    }
+
+    .szx-exclusive-offers__heading {
+        margin-bottom: 32px;
+    }
+
+    .szx-exclusive-offers__heading h2 {
+        font-size: 32px;
+    }
+
+    .szx-exclusive-offers__heading p {
+        font-size: 15px;
+    }
+
+    .szx-offers-grid {
+        grid-template-columns: 1fr;
+        gap: 18px;
+    }
+
+    .szx-offer-card {
+        width: 100%;
+        max-width: 420px;
+        margin: 0 auto;
+        border-radius: 18px;
+    }
+
+    .szx-offer-card__header {
+        min-height: 92px;
+        padding: 18px;
+    }
+
+    .szx-offer-card__icon {
+        width: 52px;
+        height: 52px;
+        flex-basis: 52px;
+        font-size: 20px;
+    }
+
+    .szx-offer-card__body {
+        min-height: auto;
+        padding: 21px 18px 18px;
+    }
+
+    .szx-offer-card__body h3 {
+        min-height: auto;
+        font-size: 17px;
+    }
+
+    .szx-exclusive-offers__footer {
+        margin-top: 30px;
+    }
+
+    .szx-view-all-offers {
+        width: 100%;
+        max-width: 420px;
+    }
+}

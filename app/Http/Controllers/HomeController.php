@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use App\Models\Region;
 use App\Services\RegionService;
 use Illuminate\Http\Request;
+use App\Services\SizzlingoBlogProductService;
 
 class HomeController extends Controller
 {
@@ -119,7 +120,7 @@ class HomeController extends Controller
                 }
             }
             $trendingOffersRow3 = $trendingOffersRow3->unique('id')->take(9);
-            
+
             // Get trending items for blogs
             $trendingBlogItems = \App\Models\TrendingItem::byRegionAndType($regionId, 'blog')
                 ->with('item.category') // Eager load item and its category relationship
@@ -258,11 +259,11 @@ class HomeController extends Controller
                 ->orderBy('updated_at', 'desc')
                 ->take(9)
                 ->get();
-            
+
             $trendingOffersRow1 = $fallbackOffers;
             $trendingOffersRow2 = $fallbackOffers;
             $trendingOffersRow3 = $fallbackOffers;
-            
+
             $trendingBlogs = \App\Models\Blog::with('category')
                 ->where('active', true)
                 ->byRegionCodes([$currentRegion])
@@ -306,6 +307,7 @@ class HomeController extends Controller
 
     public function categoryDetail($category = null)
     {
+
         // Get all route parameters
         $routeParameters = request()->route()->parameters();
 
@@ -397,13 +399,13 @@ class HomeController extends Controller
         ->with('store')
         ->orderBy('sort', 'asc');
 
-    
+
     // Check all offers for these stores without region filter
     $allOffersForStores = \App\Models\Offer::whereIn('store_id', $storeIds)
         ->where('active', true)
         ->select('id', 'title', 'store_id', 'country_codes')
         ->get();
-    
+
     $offers = $offersQuery->get();
 
     return view('category-detail', compact('categoryRecord', 'currentRegion', 'offers'));
@@ -499,8 +501,8 @@ class HomeController extends Controller
              ->map(function ($offer) use ($currentRegion, $isUsRegion) {
                  $url = '#';
                  if ($offer->store) {
-                     $url = $isUsRegion 
-                        ? route('store.detail', ltrim($offer->store->url_slug, '/')) 
+                     $url = $isUsRegion
+                        ? route('store.detail', ltrim($offer->store->url_slug, '/'))
                         : route('region.store.detail', ['region' => $currentRegion, 'store' => ltrim($offer->store->url_slug, '/')]);
                  }
                  return [
@@ -521,7 +523,7 @@ class HomeController extends Controller
                  // Determine route based on slug
                  $slug = trim($page->url_slug, '/');
                  $url = '#';
-                 
+
                  // Map common pages to their named routes
                  if (Str::contains($slug, 'about')) {
                     $url = $isUsRegion ? route('aboutUs') : route('region.aboutUs', $currentRegion);
@@ -567,8 +569,9 @@ class HomeController extends Controller
         return view('blogs', compact('blogs'));
     }
 
-    public function blogDetail($slug = null)
+    public function blogDetail( SizzlingoBlogProductService $sizzlingoBlogProductService, $slug = null)
     {
+
         // Get all route parameters
         $routeParameters = request()->route()->parameters();
 
@@ -654,8 +657,49 @@ class HomeController extends Controller
         // Fetch FAQs related to this blog
         $faqs = \App\Models\Faq::where('blog_id', $blog->id)->orderBy('sort')->get();
 
-        return view('blog-detail', compact('blog', 'currentRegion', 'faqs'));
+            /*
+            |--------------------------------------------------------------------------
+            | Build heading-dependent Shopify products
+            |--------------------------------------------------------------------------
+            |
+            | Sirf Australia ke SizzlinGo category blogs par chalega.
+            | Category ID 731 currently SizzlinGo blog category hai.
+            |
+            */
+
+            $blogContentSections = [];
+
+            if (
+                strtolower((string) $currentRegion) === 'au'
+                && (int) $blog->category_id === 731
+            ) {
+                try {
+                    $blogContentSections =
+                        $sizzlingoBlogProductService
+                            ->buildSections($blog);
+                } catch (\Throwable $exception) {
+                    /*
+                    * API ya matching error blog page ko break nahi karega.
+                    */
+                    report($exception);
+
+                    $blogContentSections = [];
+                }
+            }
+
+        // return view('blog-detail', compact('blog', 'currentRegion', 'faqs'));
+
+        return view(
+            'blog-detail',
+            compact(
+                'blog',
+                'currentRegion',
+                'faqs',
+                'blogContentSections'
+            )
+        );
     }
+
 
         // Find Terms & Conditions page based on region availability
     public function terms()

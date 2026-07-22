@@ -1,6 +1,9 @@
 @extends('layouts.app')
 @section('title', $blog->seo_title)
 @section('meta_description', $blog->meta_description)
+@push('css')
+    <link rel="stylesheet" href="{{ asset('front/css/sizz-blog-pro.css') }}">
+@endpush
 @push('schemas')
     {{-- Open Graph Meta Tags --}}
     <meta property="og:title" content="{{ $blog->seo_title }}">
@@ -441,7 +444,27 @@
 
                         <!-- Content Body -->
                         <div class="blog-content">
-                            {!! html_entity_decode($blog->content_body) !!}
+                            @if (isset($blogContentSections) && !empty($blogContentSections))
+
+                                @foreach ($blogContentSections as $section)
+                                    @if (!empty($section['heading_html']))
+                                        {!! $section['heading_html'] !!}
+                                    @endif
+
+                                    @if (isset($section['products']) && $section['products']->isNotEmpty())
+                                        @include('sizzlingo.partials.sizzlingo-heading-products', [
+                                            'products' => $section['products'],
+                                        ])
+                                    @endif
+
+                                    @if (!empty($section['body_html']))
+                                        {!! $section['body_html'] !!}
+                                    @endif
+                                @endforeach
+                            @else
+                                {!! html_entity_decode($blog->content_body) !!}
+
+                            @endif
 
                             <!-- FAQ Section inside Main Content -->
                             @if (isset($faqs) && $faqs->isNotEmpty())

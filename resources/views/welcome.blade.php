@@ -355,18 +355,16 @@
                         <div class="sizzlingo-feature-content">
                             <span class="sizzlingo-region-label">
                                 <i class="fas fa-location-dot"></i>
-                                Australia Exclusive
+                               Sydney Exclusive
                             </span>
 
                             <h2 id="sizzlingo-feature-title">
-                                Discover
-                                <span>Sizzlingo Express</span>
+                                Ready to Enjoy
+                                <span>Fresh Meals?</span>
                             </h2>
 
                             <p class="sizzlingo-description">
-                                Explore featured products from Sizzlingo Express in one convenient place.
-                                Browse the latest products, discover new favourites and shop directly from
-                                the Australian collection.
+                               Skip the cooking and let us take care of the rest. Fresh, chef-prepared meals delivered across Sydney every Wednesday and Sunday.
                             </p>
 
                             <div class="sizzlingo-benefits">
@@ -376,8 +374,8 @@
                                     </span>
 
                                     <div>
-                                        <strong>Latest Products</strong>
-                                        <small>Explore the current range</small>
+                                        <strong>Fresh Every Week</strong>
+                                        <small>Prepared with quality ingredients</small>
                                     </div>
                                 </div>
 
@@ -387,15 +385,15 @@
                                     </span>
 
                                     <div>
-                                        <strong>Easy Browsing</strong>
-                                        <small>Find products by category</small>
+                                        <strong>Sydney Delivery</strong>
+                                        <small>Delivered Wednesday & Sunday</small>
                                     </div>
                                 </div>
                             </div>
 
                             <a href="{{ route('region.sizzlingo.meals', ['region' => 'au']) }}"
                                 class="sizzlingo-view-button">
-                                Explore Sizzlingo
+                                ORDER YOUR MEALS
                                 <i class="fas fa-arrow-right"></i>
                             </a>
                         </div>
@@ -410,7 +408,7 @@
                                 </div>
 
                                 <div class="sizzlingo-card-text">
-                                    <small>Featured Australian Store</small>
+                                    <small>Featured Sydney Store</small>
                                     <strong>Sizzlingo Express</strong>
                                 </div>
 

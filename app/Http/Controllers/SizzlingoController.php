@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Blog;
+use App\Models\Category;
+use App\Models\Store;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -10,19 +13,26 @@ use RuntimeException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Throwable;
 use Illuminate\Pagination\LengthAwarePaginator;
+
 class SizzlingoController extends Controller
 {
     private const COLLECTIONS_BACKUP_KEY =
         'sizzlingo.storefront.collections.backup';
 
+        private const SIZZLINGO_BLOG_SLUGS = [
+            'halal-meals',
+            'halal-ready-to-eat-meals',
+        ];
+
     /**
      * Display Sizzzlingo landing page with all collections.
      */
+
     public function index(string $region)
     {
         $region = $this->validateRegion($region);
 
-        $rawCollections = [];
+         $rawCollections = [];
         $collectionsError = null;
         $usingBackupData = false;
 
@@ -112,6 +122,62 @@ class SizzlingoController extends Controller
                     'query' => request()->query(),
                 ]
             );
+
+            $sizzlingoBlogs = Blog::query()
+                ->with('category')
+                ->active()
+                ->where('category_id', 731)
+                ->whereIn('url_slug', self::SIZZLINGO_BLOG_SLUGS)
+                ->latest('created_at')
+                ->limit(3)
+                ->get();
+
+           /*
+                |--------------------------------------------------------------------------
+                | Exclusive SizzlinGo Offers
+                |--------------------------------------------------------------------------
+                */
+
+                $sizzlingoStore = Store::find(2990);
+
+                $exclusiveOffers = collect();
+
+                if ($sizzlingoStore) {
+                    $exclusiveOffers = $sizzlingoStore
+                        ->offers()
+                        ->where('active', 1)
+
+                        /*
+                        * AU and global offers only.
+                        */
+                        ->where(function ($query) {
+                            $query
+                                ->where('country_codes', 'au')
+                                ->orWhereNull('country_codes')
+                                ->orWhere('country_codes', '');
+                        })
+
+                        /*
+                        * Hide expired offers.
+                        */
+                        ->where(function ($query) {
+                            $query
+                                ->whereNull('end_date')
+                                ->orWhereDate('end_date', '>=', today());
+                        })
+
+                        /*
+                        * Follow admin sorting and show top six.
+                        */
+                        ->orderByRaw(
+                            'CASE WHEN sort IS NULL THEN 1 ELSE 0 END'
+                        )
+                        ->orderBy('sort', 'asc')
+                        ->orderByDesc('updated_at')
+                        ->limit(6)
+                        ->get();
+                }
+
         return view('sizzlingo.index', [
             'region' => $region,
             'collections' => $collections,
@@ -119,6 +185,9 @@ class SizzlingoController extends Controller
             'collectionsError' => $collectionsError,
             'usingBackupData' => $usingBackupData,
             'sizzlingoBaseUrl' => $this->getStoreUrl(),
+             'sizzlingoBlogs' => $sizzlingoBlogs,
+              'sizzlingoStore' => $sizzlingoStore,
+             'exclusiveOffers' => $exclusiveOffers,
         ]);
     }
 
